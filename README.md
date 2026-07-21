@@ -26,7 +26,8 @@ account, no telemetry.
 Works identically on Claude Code CLI and Claude Cowork. Prerequisite:
 Python 3.9+ with PyYAML (`python3 -m pip install --user pyyaml`).
 
-Then run `/organic-os:setup`. To try it with **zero credentials**, run
+Then run `/organic-os:setup`. For the full command list, see
+[plugin/docs/commands.md](plugin/docs/commands.md). To try it with **zero credentials**, run
 `/organic-os:onsite-audit https://yoursite.com` - it audits any public page
 with no login.
 
@@ -108,7 +109,7 @@ Three bounded modules, one install:
 | **content-engine** | Turns an approved brief (explainer or comparison) into a publish-ready draft - research, brand-voice compliance, SEO/authority pass, editorial QA, a human-review-necessity score for the approver - with an optional featured-image step |
 
 Verified inventory (2026-07-19): **22 skills, 22 slash commands, 14
-specialist agents, 292 passing tests.**
+specialist agents, 139 passing tests.**
 
 ```mermaid
 flowchart TB
