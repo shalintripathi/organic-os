@@ -42,3 +42,30 @@ land together with their quotes. When a change introduces a new
 load-bearing fact (anything about to be quoted in a second file), add its
 row here in that same commit, and prefer wiring it into audit check 8
 over leaving it `manual`.
+
+## Command reference
+
+| Command | Description | File |
+|---|---|---|
+| `apply` | Execute approved on-page proposals against WordPress (refuses anything not approved) | [plugin/commands/apply.md](../plugin/commands/apply.md) |
+| `citations` | Track AI answer-engine citations and share of voice for the profile's query set | [plugin/commands/citations.md](../plugin/commands/citations.md) |
+| `competitors` | Run competitor content intelligence and surface gaps against the profile | [plugin/commands/competitors.md](../plugin/commands/competitors.md) |
+| `daily` | Run the daily organic signal pull (append-only, never mutates) | [plugin/commands/daily.md](../plugin/commands/daily.md) |
+| `export` | Export the brain to CSV for Sheets, Looker Studio, or any BI tool | [plugin/commands/export.md](../plugin/commands/export.md) |
+| `image` | Create the featured image / social card for a drafted post | [plugin/commands/image.md](../plugin/commands/image.md) |
+| `import-audit` | Import an external claude-seo audit report as gated proposals | [plugin/commands/import-audit.md](../plugin/commands/import-audit.md) |
+| `keywords` | Run tiered keyword intelligence - ideas, competitor gaps, or CSV import | [plugin/commands/keywords.md](../plugin/commands/keywords.md) |
+| `measure` | Measure applied or published on-page changes at day 7 and day 28 | [plugin/commands/measure.md](../plugin/commands/measure.md) |
+| `monday-report` | Write a stakeholder-shareable weekly summary of what moved, shipped, and needs a decision | [plugin/commands/monday-report.md](../plugin/commands/monday-report.md) |
+| `monthly-audit` | Run the monthly deep organic audit across all eight specialists | [plugin/commands/monthly-audit.md](../plugin/commands/monthly-audit.md) |
+| `onsite-audit` | Audit on-page SEO for a URL or a whole site section (read-only) | [plugin/commands/onsite-audit.md](../plugin/commands/onsite-audit.md) |
+| `produce` | Draft a publish-ready post from an approved content brief (six-stage pipeline) | [plugin/commands/produce.md](../plugin/commands/produce.md) |
+| `propose` | Turn audit findings or signals into concrete gated on-page change proposals | [plugin/commands/propose.md](../plugin/commands/propose.md) |
+| `publish` | Publish an approved, drafted content item to WordPress (refuses unapproved items) | [plugin/commands/publish.md](../plugin/commands/publish.md) |
+| `reset` | Guided teardown of an organic-os site - what gets deregistered automatically, what you must delete or revoke yourself, and why | [plugin/commands/reset.md](../plugin/commands/reset.md) |
+| `setup` | Onboard a site into organic-os (interview + brain scaffold + routines) | [plugin/commands/setup.md](../plugin/commands/setup.md) |
+| `sites` | Manage organic-os sites - add another website, switch the active site, or show registry status | [plugin/commands/sites.md](../plugin/commands/sites.md) |
+| `start` | The guided front door - run this first | [plugin/commands/start.md](../plugin/commands/start.md) |
+| `status` | Show organic-os site status - pending approvals, recent signals, next routine | [plugin/commands/status.md](../plugin/commands/status.md) |
+| `task-board` | Show the organic-os work queue and mirror it to Notion when available | [plugin/commands/task-board.md](../plugin/commands/task-board.md) |
+| `weekly` | Run the weekly organic health check + reflection | [plugin/commands/weekly.md](../plugin/commands/weekly.md) |
