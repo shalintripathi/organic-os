@@ -264,6 +264,103 @@ def test_urllibhttp_post_multipart_sanitizes_errors(monkeypatch):
         raise AssertionError("post_multipart did not raise on HTTPError")
 
 
+def test_urllibhttp_post_sanitizes_http_errors(monkeypatch):
+    import urllib.error
+
+    token_url = "https://api.telegram.org/botSECRET-TOKEN-123/sendMessage"
+
+    def fake_urlopen(req, timeout=None):
+        raise urllib.error.HTTPError(
+            token_url, 401, "Unauthorized", None, None)
+
+    monkeypatch.setattr(T.urllib.request, "urlopen", fake_urlopen)
+    http = T.UrllibHTTP()
+    try:
+        http.post(token_url, {"chat_id": "1", "text": "hi"})
+    except RuntimeError as e:
+        assert "SECRET-TOKEN-123" not in str(e)
+        assert "401" in str(e)
+    else:
+        raise AssertionError("post did not raise on HTTPError")
+
+
+def test_urllibhttp_post_sanitizes_url_errors(monkeypatch):
+    import urllib.error
+
+    token_url = "https://api.telegram.org/botSECRET-TOKEN-123/sendMessage"
+
+    def fake_urlopen(req, timeout=None):
+        raise urllib.error.URLError("network unreachable")
+
+    monkeypatch.setattr(T.urllib.request, "urlopen", fake_urlopen)
+    http = T.UrllibHTTP()
+    try:
+        http.post(token_url, {"chat_id": "1", "text": "hi"})
+    except RuntimeError as e:
+        assert "SECRET-TOKEN-123" not in str(e)
+        assert "network unreachable" in str(e)
+    else:
+        raise AssertionError("post did not raise on URLError")
+
+
+def test_urllibhttp_get_sanitizes_http_errors(monkeypatch):
+    import urllib.error
+
+    token_url = "https://api.telegram.org/botSECRET-TOKEN-123/getUpdates"
+
+    def fake_urlopen(req, timeout=None):
+        raise urllib.error.HTTPError(
+            token_url, 403, "Forbidden", None, None)
+
+    monkeypatch.setattr(T.urllib.request, "urlopen", fake_urlopen)
+    http = T.UrllibHTTP()
+    try:
+        http.get(token_url, {"offset": 1, "timeout": 0})
+    except RuntimeError as e:
+        assert "SECRET-TOKEN-123" not in str(e)
+        assert "403" in str(e)
+    else:
+        raise AssertionError("get did not raise on HTTPError")
+
+
+def test_urllibhttp_get_sanitizes_url_errors(monkeypatch):
+    import urllib.error
+
+    token_url = "https://api.telegram.org/botSECRET-TOKEN-123/getUpdates"
+
+    def fake_urlopen(req, timeout=None):
+        raise urllib.error.URLError("timed out")
+
+    monkeypatch.setattr(T.urllib.request, "urlopen", fake_urlopen)
+    http = T.UrllibHTTP()
+    try:
+        http.get(token_url, {"offset": 1, "timeout": 0})
+    except RuntimeError as e:
+        assert "SECRET-TOKEN-123" not in str(e)
+        assert "timed out" in str(e)
+    else:
+        raise AssertionError("get did not raise on URLError")
+
+
+def test_urllibhttp_post_multipart_sanitizes_url_errors(monkeypatch):
+    import urllib.error
+
+    token_url = "https://api.telegram.org/botSECRET-TOKEN-123/sendDocument"
+
+    def fake_urlopen(req, timeout=None):
+        raise urllib.error.URLError("connection reset")
+
+    monkeypatch.setattr(T.urllib.request, "urlopen", fake_urlopen)
+    http = T.UrllibHTTP()
+    try:
+        http.post_multipart(token_url, {"chat_id": "1"}, "document", "r.pdf", b"x")
+    except RuntimeError as e:
+        assert "SECRET-TOKEN-123" not in str(e)
+        assert "connection reset" in str(e)
+    else:
+        raise AssertionError("post_multipart did not raise on URLError")
+
+
 def test_send_document_empty_caption_omitted(tmp_path):
     doc = tmp_path / "r.html"
     doc.write_bytes(b"<p>x</p>")
