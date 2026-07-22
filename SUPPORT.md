@@ -15,9 +15,26 @@ Most questions are answered in the shipped docs:
   weekly, and monthly loops.
 - [README](README.md) - the overview, the three modules, and the FAQ.
 
+## Ask in Discussions
+
+If the docs did not settle it and you are not sure it is a bug, ask in
+[Discussions](https://github.com/shalintripathi/organic-os/discussions):
+
+- [Q&A](https://github.com/shalintripathi/organic-os/discussions/categories/q-a)
+  - you are stuck or want to check whether you set something up correctly.
+  Answers stay searchable for the next person.
+- [Ideas](https://github.com/shalintripathi/organic-os/discussions/categories/ideas)
+  - a capability that does not exist yet. Check
+  [ROADMAP.md](ROADMAP.md) first, including what this project deliberately
+  will not build.
+- [Show and tell](https://github.com/shalintripathi/organic-os/discussions/categories/show-and-tell)
+  - you ran it on a real site. Results that did not move are as useful to
+  post as results that did.
+
 ## Open an issue
 
-If the docs did not cover it, open an issue with the right form:
+If you have a reproducible bug or a concrete request, skip the discussion and
+open an issue with the right form:
 
 - **Bug report** - something worked differently than documented.
 - **Feature request** - a capability you want, or a reprioritization of the

@@ -337,10 +337,26 @@ connectors.md`.
 Themes, not promises - see `ROADMAP.md` for what is planned across v0.2,
 v0.3, and v1.0.
 
+## Community
+
+- [Discussions](https://github.com/shalintripathi/organic-os/discussions) -
+  [Q&A](https://github.com/shalintripathi/organic-os/discussions/categories/q-a)
+  if you are stuck,
+  [Ideas](https://github.com/shalintripathi/organic-os/discussions/categories/ideas)
+  for what does not exist yet, and
+  [Show and tell](https://github.com/shalintripathi/organic-os/discussions/categories/show-and-tell)
+  if you ran it on a real site - results that did not move are as welcome as
+  results that did.
+- [Issues](https://github.com/shalintripathi/organic-os/issues) for
+  reproducible bugs and concrete requests, and `SUPPORT.md` for which to use
+  when.
+
 ## Contributing
 
 Code, tests, and CMS/channel adapters are welcome; business data is not -
 see `CONTRIBUTING.md` for the full guide and the data boundary CI enforces.
+Open [good first issues](https://github.com/shalintripathi/organic-os/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+each carry the files to touch, the approach, and a definition of done.
 
 ## Credits and prior art
 

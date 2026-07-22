@@ -3,3 +3,12 @@ contact_links:
   - name: Setup and usage docs
     url: https://github.com/shalintripathi/organic-os/blob/main/plugin/docs/getting-started.md
     about: The getting-started and connector guides answer most setup and usage questions before you file an issue.
+  - name: Ask a question in Discussions
+    url: https://github.com/shalintripathi/organic-os/discussions/categories/q-a
+    about: Not sure it is a bug? Ask in Q&A and the answer stays searchable for the next person.
+  - name: Suggest an idea in Discussions
+    url: https://github.com/shalintripathi/organic-os/discussions/categories/ideas
+    about: For a capability that does not exist yet. Check ROADMAP.md first, including what this project deliberately will not build.
+  - name: Report a security issue privately
+    url: https://github.com/shalintripathi/organic-os/security/advisories/new
+    about: Never open a public issue for a credential or security problem. Use a private advisory instead.
