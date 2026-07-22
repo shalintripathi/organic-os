@@ -361,6 +361,92 @@ def test_urllibhttp_post_multipart_sanitizes_url_errors(monkeypatch):
         raise AssertionError("post_multipart did not raise on URLError")
 
 
+
+def test_urllibhttp_post_sanitizes_invalid_url(monkeypatch):
+    """InvalidURL (e.g. newline in token) must not leak the token (issue #12)."""
+    import http.client
+
+    token_url = "https://api.telegram.org/botSECRET-TOKEN-123\n/sendMessage"
+
+    def fake_urlopen(req, timeout=None):
+        raise http.client.InvalidURL(
+            "URL can't contain control characters. '/botSECRET-TOKEN-123\n/sendMessage'"
+        )
+
+    monkeypatch.setattr(T.urllib.request, "urlopen", fake_urlopen)
+    http = T.UrllibHTTP()
+    try:
+        http.post(token_url, {"chat_id": "1", "text": "hi"})
+    except RuntimeError as e:
+        assert "SECRET-TOKEN-123" not in str(e)
+        assert "telegram api error" in str(e)
+    else:
+        raise AssertionError("post did not raise on InvalidURL")
+
+
+def test_urllibhttp_get_sanitizes_invalid_url(monkeypatch):
+    import http.client
+
+    token_url = "https://api.telegram.org/botSECRET-TOKEN-123 /getUpdates"
+
+    def fake_urlopen(req, timeout=None):
+        raise http.client.InvalidURL(
+            "URL can't contain control characters. 'SECRET-TOKEN-123 '"
+        )
+
+    monkeypatch.setattr(T.urllib.request, "urlopen", fake_urlopen)
+    try:
+        T.UrllibHTTP().get(token_url, {"offset": 1})
+    except RuntimeError as e:
+        assert "SECRET-TOKEN-123" not in str(e)
+    else:
+        raise AssertionError("get did not raise on InvalidURL")
+
+
+def test_urllibhttp_post_multipart_sanitizes_invalid_url(monkeypatch):
+    import http.client
+
+    token_url = "https://api.telegram.org/botSECRET-TOKEN-123\n/sendDocument"
+
+    def fake_urlopen(req, timeout=None):
+        raise http.client.InvalidURL("URL can't contain control characters. SECRET-TOKEN-123")
+
+    monkeypatch.setattr(T.urllib.request, "urlopen", fake_urlopen)
+    try:
+        T.UrllibHTTP().post_multipart(token_url, {"chat_id": "1"}, "document", "r.pdf", b"x")
+    except RuntimeError as e:
+        assert "SECRET-TOKEN-123" not in str(e)
+    else:
+        raise AssertionError("post_multipart did not raise on InvalidURL")
+
+
+def test_urllibhttp_post_sanitizes_value_error_unknown_url_type(monkeypatch):
+    token_url = "botSECRET-TOKEN-123/sendMessage"  # scheme-less
+
+    def fake_urlopen(req, timeout=None):
+        raise ValueError("unknown url type: 'botSECRET-TOKEN-123/sendMessage'")
+
+    monkeypatch.setattr(T.urllib.request, "urlopen", fake_urlopen)
+    try:
+        T.UrllibHTTP().post(token_url, {"chat_id": "1", "text": "hi"})
+    except RuntimeError as e:
+        assert "SECRET-TOKEN-123" not in str(e)
+        assert "unknown url type" not in str(e)
+    else:
+        raise AssertionError("post did not raise on ValueError")
+
+
+def test_sanitize_bot_token_strips_and_rejects_controls():
+    assert T.sanitize_bot_token("  SECRET-TOKEN-123\n") == "SECRET-TOKEN-123"
+    try:
+        T.sanitize_bot_token("SECRET TOKEN WITH SPACE")
+    except RuntimeError as e:
+        assert "SECRET" not in str(e) or "whitespace" in str(e).lower()
+        assert "SECRET TOKEN WITH SPACE" not in str(e)
+    else:
+        raise AssertionError("expected RuntimeError for spaced token")
+
+
 def test_send_document_empty_caption_omitted(tmp_path):
     doc = tmp_path / "r.html"
     doc.write_bytes(b"<p>x</p>")

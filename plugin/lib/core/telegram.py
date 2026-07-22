@@ -54,19 +54,55 @@ def _reply_decision(msg: dict):
     return ids[0], _REPLY_VERBS[verb], note
 
 
+def sanitize_bot_token(token: str) -> str:
+    """Strip surrounding whitespace; reject whitespace/control characters.
+
+    Tokens often come from env files with a trailing newline. Those control
+    characters make urllib raise InvalidURL with the full URL (and token) in
+    the message. Fail closed with a message that never echoes the secret.
+    """
+    if token is None:
+        raise RuntimeError("telegram bot token is missing")
+    cleaned = str(token).strip()
+    if not cleaned:
+        raise RuntimeError("telegram bot token is empty")
+    # Reject any remaining whitespace or ASCII controls (incl. newline/tab).
+    if any(ch.isspace() or ord(ch) < 32 for ch in cleaned):
+        raise RuntimeError(
+            "telegram bot token contains whitespace or control characters; "
+            "strip the token (e.g. trailing newline from a file) and retry"
+        )
+    return cleaned
+
+
+def _telegram_api_error(exc: BaseException) -> RuntimeError:
+    """Re-raise transport failures without the token-bearing URL."""
+    if isinstance(exc, urllib.error.HTTPError):
+        return RuntimeError(f"telegram api error: HTTP {exc.code} {exc.reason}")
+    if isinstance(exc, urllib.error.URLError):
+        return RuntimeError(f"telegram api error: {exc.reason}")
+    # InvalidURL / ValueError / anything else that may embed the URL.
+    return RuntimeError("telegram api error: invalid request")
+
+
 class UrllibHTTP:
     # Errors are re-raised with status/reason only: the URL embeds the bot
-    # token and must never surface in a printed exception.
+    # token and must never surface in a printed exception. Catch broader than
+    # HTTPError/URLError so InvalidURL (control chars in token) and ValueError
+    # (scheme-less URL) cannot leak the token (issue #12).
     def post(self, url, payload):
-        req = urllib.request.Request(url, data=json.dumps(payload).encode(),
-                                     headers={"Content-Type": "application/json"})
         try:
+            req = urllib.request.Request(url, data=json.dumps(payload).encode(),
+                                         headers={"Content-Type": "application/json"})
             with urllib.request.urlopen(req, timeout=30) as r:
                 return json.load(r)
         except urllib.error.HTTPError as e:
-            raise RuntimeError(f"telegram api error: HTTP {e.code} {e.reason}") from None
+            raise _telegram_api_error(e) from None
         except urllib.error.URLError as e:
-            raise RuntimeError(f"telegram api error: {e.reason}") from None
+            raise _telegram_api_error(e) from None
+        except Exception as e:
+            # InvalidURL / ValueError (scheme-less Request) may embed the URL.
+            raise _telegram_api_error(e) from None
 
     def get(self, url, params):
         try:
@@ -74,9 +110,11 @@ class UrllibHTTP:
                                         timeout=30) as r:
                 return json.load(r)
         except urllib.error.HTTPError as e:
-            raise RuntimeError(f"telegram api error: HTTP {e.code} {e.reason}") from None
+            raise _telegram_api_error(e) from None
         except urllib.error.URLError as e:
-            raise RuntimeError(f"telegram api error: {e.reason}") from None
+            raise _telegram_api_error(e) from None
+        except Exception as e:
+            raise _telegram_api_error(e) from None
 
     def post_multipart(self, url, fields, file_field, file_name, file_bytes):
         boundary = "organic-os-" + uuid.uuid4().hex
@@ -92,16 +130,18 @@ class UrllibHTTP:
                      + file_bytes + b"\r\n")
         parts.append(f"--{boundary}--\r\n".encode())
         body = b"".join(parts)
-        req = urllib.request.Request(
-            url, data=body,
-            headers={"Content-Type": f"multipart/form-data; boundary={boundary}"})
         try:
+            req = urllib.request.Request(
+                url, data=body,
+                headers={"Content-Type": f"multipart/form-data; boundary={boundary}"})
             with urllib.request.urlopen(req, timeout=60) as r:
                 return json.load(r)
         except urllib.error.HTTPError as e:
-            raise RuntimeError(f"telegram api error: HTTP {e.code} {e.reason}") from None
+            raise _telegram_api_error(e) from None
         except urllib.error.URLError as e:
-            raise RuntimeError(f"telegram api error: {e.reason}") from None
+            raise _telegram_api_error(e) from None
+        except Exception as e:
+            raise _telegram_api_error(e) from None
 
 
 def send_item(http, token: str, chat_id, item: dict) -> None:
@@ -113,7 +153,7 @@ def send_item(http, token: str, chat_id, item: dict) -> None:
             f"Reply to this message with approve or reject "
             f"(a bare 'approved' works as a reply).\n"
             f"Or send: approve {m['id']}  |  reject {m['id']} <reason>")
-    http.post(API.format(token=token, method="sendMessage"),
+    http.post(API.format(token=sanitize_bot_token(token), method="sendMessage"),
               {"chat_id": chat_id, "text": text})
 
 
@@ -128,12 +168,12 @@ def send_document(token: str, chat_id, file_path, caption=None, transport=None):
     fields = {"chat_id": str(chat_id)}
     if caption:
         fields["caption"] = caption
-    return http.post_multipart(API.format(token=token, method="sendDocument"),
+    return http.post_multipart(API.format(token=sanitize_bot_token(token), method="sendDocument"),
                                fields, "document", path.name, path.read_bytes())
 
 
 def poll_decisions(http, token: str, chat_id, offset: int = 0):
-    data = http.get(API.format(token=token, method="getUpdates"),
+    data = http.get(API.format(token=sanitize_bot_token(token), method="getUpdates"),
                     {"offset": offset + 1, "timeout": 0})
     decisions, last = [], offset
     for u in data.get("result", []):
