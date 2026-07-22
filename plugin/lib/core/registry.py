@@ -52,6 +52,11 @@ def register(url: str, name: str, brain, path=DEFAULT) -> str:
     path = Path(path)
     data = load(path)
     slug = _slugify(url)
+    if not slug:
+        raise ValueError(
+            f"cannot register {url!r}: it produces an empty site id. "
+            "Pass a URL with a hostname, such as https://example.com"
+        )
     data["sites"][slug] = {"url": url, "name": name, "brain": str(brain)}
     data["active"] = slug
     _atomic_write(path, data)

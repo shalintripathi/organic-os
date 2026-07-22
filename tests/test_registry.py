@@ -67,6 +67,38 @@ def test_get_active_none_when_no_registry(tmp_path):
     assert R.get_active(tmp_path / "sites.yaml") is None
 
 
+def test_register_empty_url_raises_and_does_not_write(tmp_path):
+    path = tmp_path / "sites.yaml"
+    with pytest.raises(ValueError, match="empty site id"):
+        R.register("", "No URL", "/tmp/brain", path=path)
+    assert not path.exists()
+
+
+def test_register_whitespace_url_raises_and_does_not_write(tmp_path):
+    path = tmp_path / "sites.yaml"
+    with pytest.raises(ValueError, match="empty site id"):
+        R.register("   ", "No URL", "/tmp/brain", path=path)
+    assert not path.exists()
+
+
+def test_register_empty_url_leaves_existing_registry_unchanged(tmp_path):
+    path = tmp_path / "sites.yaml"
+    slug = R.register("https://example.com", "Example", "/brains/ex", path=path)
+    before = path.read_text()
+    with pytest.raises(ValueError, match="empty site id"):
+        R.register("", "Bad", "/tmp/brain", path=path)
+    assert path.read_text() == before
+    assert R.load(path)["active"] == slug
+    assert set(R.load(path)["sites"]) == {slug}
+
+
+def test_register_normal_url_still_returns_slug(tmp_path):
+    path = tmp_path / "sites.yaml"
+    slug = R.register("https://example.com", "Example", "/brains/ex", path=path)
+    assert slug == "example-com"
+    assert R.get_active(path)["slug"] == "example-com"
+
+
 # -- path_warnings -----------------------------------------------------
 # Field report: a brain scaffolded under ~/Documents (or Desktop/Downloads)
 # breaks launchd/cron runs silently on macOS - TCC blocks the non-interactive
