@@ -173,3 +173,23 @@ def test_render_html_still_renders_when_the_scan_raises(monkeypatch):
     html = R.render_html(PLANTED_REPORT, "Monday report", "Example")
     assert "Redaction check" not in html
     assert "<h1>Monday report</h1>" in html
+
+
+def test_render_html_inline_code_spans():
+    out = R.render_html("- `p-20260713-title` [onpage-fix] Fix the title",
+                        title="T", site_name="S")
+    assert "<code>p-20260713-title</code>" in out
+    assert "`p-20260713-title`" not in out
+
+
+def test_render_html_code_spans_are_literal():
+    md = "before `**not bold** [not a link](x)` after"
+    out = R.render_html(md, title="T", site_name="S")
+    assert "<code>**not bold** [not a link](x)</code>" in out
+    assert "<strong>" not in out.split("<code>")[1].split("</code>")[0]
+    assert "<a href" not in out.split("<code>")[1].split("</code>")[0]
+
+
+def test_render_html_escapes_inside_code_spans():
+    out = R.render_html("x `<script>y</script>` z", title="T", site_name="S")
+    assert "<code>&lt;script&gt;y&lt;/script&gt;</code>" in out
