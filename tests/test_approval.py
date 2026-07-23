@@ -135,3 +135,16 @@ def test_process_telegram_decisions_stale_does_not_block_other_decisions(tmp_pat
     assert out == [(applied_id, "stale"), (fresh_id, "recorded")]
     assert C.load_item(applied)["meta"]["status"] == "applied"       # untouched
     assert C.load_item(fresh)["meta"]["status"] == "approved"        # recorded
+
+
+def test_find_skips_a_malformed_sibling_file(tmp_path):
+    """A brief with no parseable frontmatter must not break resolving a good one."""
+    import core.approval as A
+    (tmp_path / "briefs").mkdir()
+    (tmp_path / "proposals").mkdir()
+    (tmp_path / "briefs" / "good.md").write_text(
+        "---\nid: b-20260101-good\nkind: content-brief\nstatus: proposed\n"
+        "title: Good\napprovals: []\n---\nbody\n")
+    (tmp_path / "briefs" / "broken.md").write_text("no frontmatter here at all\n")
+    found = A.find(str(tmp_path), "b-20260101-good")
+    assert found.name == "good.md"

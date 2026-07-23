@@ -20,7 +20,11 @@ def pending(root):
 def find(root, item_id: str):
     for folder in ("briefs", "proposals"):
         for f in (Path(root) / folder).glob("*.md"):
-            if C.load_item(f)["meta"]["id"] == item_id:
+            try:
+                meta = C.load_item(f).get("meta") or {}
+            except Exception:
+                continue  # a malformed sibling file must not break resolution
+            if meta.get("id") == item_id:
                 return f
     raise C.ContractError(f"no item {item_id}")
 
