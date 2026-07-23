@@ -7,5 +7,5 @@
   <circle cx="60" cy="16" r="6" fill="#27c93f"/>
   <text x="320" y="20" text-anchor="middle" font-family="monospace" font-size="12" fill="#6c7086">claude</text>
   <text x="20" y="66" font-family="monospace" font-size="15" fill="#89b4fa">&gt; /plugin install organic-os@organic-os</text>
-  <text x="20" y="98" font-family="monospace" font-size="15" fill="#a6e3a1">Installed organic-os v0.5.1 - 24 skills, 24 commands, 14 agents</text>
+  <text x="20" y="98" font-family="monospace" font-size="15" fill="#a6e3a1">Installed organic-os v0.5.2 - 24 skills, 24 commands, 14 agents</text>
 </svg>

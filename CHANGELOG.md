@@ -2,6 +2,19 @@
 
 ## [Unreleased]
 
+## [0.5.2] - 2026-07-24
+
+### Fixed
+- The Monday report renders inline backtick code spans as `<code>` instead of
+  literal backticks, so item ids read cleanly. Escaping runs before the span is
+  wrapped, so report content stays injection-safe. Contributed by
+  AshSgDe29071999 in #18, closing #7.
+- `sanitize_bot_token` now rejects DEL and C1 control characters, which the
+  earlier control-character guard missed. Contributed by MasRama in #16,
+  closing #15. Two follow-ups are tracked in #19 and #20.
+- `approval.find()` no longer crashes on a malformed sibling brief file; a bad
+  file is skipped rather than aborting the scan.
+
 ## [0.5.1] - 2026-07-23
 
 Approval UX and release hygiene. The Telegram approval message a human
