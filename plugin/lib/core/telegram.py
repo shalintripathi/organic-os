@@ -68,7 +68,9 @@ def sanitize_bot_token(token: str) -> str:
     if not cleaned:
         raise RuntimeError("telegram bot token is empty")
     # Reject any remaining whitespace or ASCII controls (incl. newline/tab).
-    if any(ch.isspace() or ord(ch) < 32 for ch in cleaned):
+    # http.client also rejects DEL (0x7f) and C1 controls (0x80-0x9f); a
+    # token containing those passes this check but fails deeper in the stack.
+    if any(ch.isspace() or ord(ch) < 32 or 0x7f <= ord(ch) <= 0x9f for ch in cleaned):
         raise RuntimeError(
             "telegram bot token contains whitespace or control characters; "
             "strip the token (e.g. trailing newline from a file) and retry"
@@ -96,6 +98,11 @@ def _telegram_api_error(exc: BaseException) -> RuntimeError:
     if isinstance(exc, urllib.error.HTTPError):
         return RuntimeError(f"telegram api error: HTTP {exc.code} {exc.reason}")
     if isinstance(exc, urllib.error.URLError):
+        # The reason string is interpolated verbatim. In practice the API
+        # constant hardcodes https, so the reason never carries the URL or
+        # token. But the reason itself is not sanitised, so the claim that
+        # nothing can leak the token is not quite true for a hypothetical
+        # non-https caller -- keep the message, narrow the guarantee.
         return RuntimeError(f"telegram api error: {exc.reason}")
     # InvalidURL / ValueError / anything else that may embed the URL. The
     # class name is safe (a type name can never carry the token) and names

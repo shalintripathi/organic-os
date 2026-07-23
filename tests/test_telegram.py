@@ -558,6 +558,25 @@ def test_sanitize_bot_token_strips_and_rejects_controls():
         raise AssertionError("expected RuntimeError for spaced token")
 
 
+@pytest.mark.parametrize("bad_char,kind", [
+    ("\x7f", "DEL"),
+    ("\x80", "C1"),
+    ("\x9f", "C1"),
+])
+def test_sanitize_bot_token_rejects_del_and_c1_controls(bad_char, kind):
+    """http.client rejects DEL (0x7f) and C1 (0x80-0x9f); the sanitizer must
+    reject them too so the token never reaches the stack that would echo it."""
+    token = "SECRET-TOKEN-123" + bad_char
+    try:
+        T.sanitize_bot_token(token)
+    except RuntimeError as e:
+        assert "SECRET" not in str(e), f"{kind} char: token leaked in error"
+        assert token not in str(e), f"{kind} char: full token leaked in error"
+        assert "control" in str(e).lower(), f"{kind} char: reason not named"
+    else:
+        raise AssertionError(f"expected RuntimeError for {kind} control char")
+
+
 def test_send_document_empty_caption_omitted(tmp_path):
     doc = tmp_path / "r.html"
     doc.write_bytes(b"<p>x</p>")
