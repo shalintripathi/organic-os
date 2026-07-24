@@ -27,6 +27,10 @@ _LINK = re.compile(r"\[([^\]]+)\]\(([^)\s]+)\)")
 _BOLD = re.compile(r"\*\*([^*]+)\*\*")
 _CODE = re.compile(r"`([^`]+)`")
 
+# RFC 3986 scheme syntax: a letter, then letters/digits/+/-/. , then ":".
+_URL_SCHEME = re.compile(r"^([a-zA-Z][a-zA-Z0-9+.-]*):")
+_ALLOWED_URL_SCHEMES = {"http", "https", "mailto"}
+
 _CSS = """
 :root { color-scheme: light; }
 body { margin: 0; background: #ffffff; color: #1c1c1c;
@@ -68,6 +72,38 @@ p.redaction-note { border: 1px solid #b58900; background: #fdf6e3;
 """
 
 
+def _is_safe_url(url: str) -> bool:
+    """Allowlist http(s)/mailto/relative links; reject everything else.
+
+    An allowlist only has to name the handful of schemes a report link
+    legitimately needs (http, https, mailto) or no scheme at all (a
+    relative link, anchor, or bare path). A denylist would instead have to
+    enumerate every dangerous scheme -- javascript:, data:, vbscript:, and
+    whatever else shows up later -- which is exactly the kind of gap that
+    let this bug through in the first place.
+    """
+    match = _URL_SCHEME.match(url.strip())
+    if not match:
+        return True
+    return match.group(1).lower() in _ALLOWED_URL_SCHEMES
+
+
+def _link_sub(match: "re.Match[str]") -> str:
+    label, url = match.group(1), match.group(2)
+    if not _is_safe_url(url):
+        # javascript:, data:, etc: drop the link but keep the label as
+        # plain text so the surrounding sentence still reads naturally.
+        return label
+    # The whole text already went through html.escape(quote=False) before
+    # this substitution runs (see _inline below), so & < > in `url` are
+    # already entity-escaped -- re-escaping them here would double-escape
+    # (turning &amp; into &amp;amp;). Only the quote character still needs
+    # handling, since quote=False leaves it untouched, and it's the one
+    # that lets a URL break out of the href="..." attribute.
+    safe_url = url.replace('"', "&quot;")
+    return f'<a href="{safe_url}">{label}</a>'
+
+
 def _inline(text: str) -> str:
     text = _html.escape(text, quote=False)
     # Split on code spans first so link/bold substitution cannot reach inside.
@@ -77,7 +113,7 @@ def _inline(text: str) -> str:
         if i % 2 == 1:
             out.append(f"<code>{part}</code>")
             continue
-        part = _LINK.sub(r'<a href="\2">\1</a>', part)
+        part = _LINK.sub(_link_sub, part)
         part = _BOLD.sub(r"<strong>\1</strong>", part)
         out.append(part)
     return "".join(out)
