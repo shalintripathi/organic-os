@@ -193,3 +193,45 @@ def test_render_html_code_spans_are_literal():
 def test_render_html_escapes_inside_code_spans():
     out = R.render_html("x `<script>y</script>` z", title="T", site_name="S")
     assert "<code>&lt;script&gt;y&lt;/script&gt;</code>" in out
+
+
+# -- link safety: scheme allowlist + attribute escaping ------------------------
+#
+# The link renderer used to insert the URL into href="..." with attribute
+# escaping disabled and no scheme check, so a quote could break out of the
+# attribute and a javascript:/data: URL rendered as a clickable script link.
+# Assertions check the actual rendered fragment, not just that "<a" appears.
+
+
+def test_render_html_link_url_cannot_break_out_of_the_attribute():
+    md = '[click](https://good.example/path"onmouseover="alert(document.cookie))'
+    out = R.render_html(md, title="T", site_name="S")
+    assert 'onmouseover="alert' not in out
+    assert "&quot;onmouseover=&quot;" in out
+
+
+def test_render_html_rejects_javascript_scheme_link():
+    md = "[click](javascript:document.location='http://evil.example')"
+    out = R.render_html(md, title="T", site_name="S")
+    assert "<a href" not in out
+    assert "javascript:" not in out
+    assert "click" in out  # label still shown, as plain text
+
+
+def test_render_html_rejects_data_scheme_link():
+    md = "[open](data:text/html,evil-payload-marker)"
+    out = R.render_html(md, title="T", site_name="S")
+    assert "<a href" not in out
+    assert "data:" not in out
+
+
+def test_render_html_still_allows_http_https_mailto_and_relative_links():
+    md = ("[a](http://good.example/x) "
+          "[b](https://good.example/y) "
+          "[c](mailto:person@good.example) "
+          "[d](../signals/report.md)")
+    out = R.render_html(md, title="T", site_name="S")
+    assert '<a href="http://good.example/x">a</a>' in out
+    assert '<a href="https://good.example/y">b</a>' in out
+    assert '<a href="mailto:person@good.example">c</a>' in out
+    assert '<a href="../signals/report.md">d</a>' in out
