@@ -27,6 +27,36 @@ _LINK = re.compile(r"\[([^\]]+)\]\(([^)\s]+)\)")
 _BOLD = re.compile(r"\*\*([^*]+)\*\*")
 _CODE = re.compile(r"`([^`]+)`")
 
+# Schemes a rendered link may carry. Anything else (javascript:, data:,
+# vbscript:, ...) renders as its bare label: an allowlist stays safe when a
+# new dangerous scheme appears, a denylist does not. Scheme-less relative
+# URLs pass.
+_SAFE_LINK_SCHEMES = frozenset({"http", "https", "mailto"})
+_SCHEME = re.compile(r"([a-zA-Z][a-zA-Z0-9+.-]*):")
+# Browsers drop leading C0 controls and spaces before parsing a URL, and drop
+# tab/newline anywhere inside it, so "\x01javascript:" and "java\tscript:"
+# both execute. The scheme check normalizes the same way first.
+_URL_JUNK = "".join(map(chr, range(0x21)))
+
+
+def _link_tag(m: "re.Match") -> str:
+    """One matched [label](url) as a safe anchor, or the label alone.
+
+    Both groups arrive HTML-escaped except for quotes (_inline runs
+    html.escape with quote=False before this substitution), so the URL still
+    needs its quotes entity-encoded for the double-quoted attribute context,
+    and the scheme needs browser-style normalization before the allowlist
+    check.
+    """
+    label, url = m.group(1), m.group(2)
+    probe = (url.lstrip(_URL_JUNK)
+             .replace("\t", "").replace("\n", "").replace("\r", ""))
+    scheme = _SCHEME.match(probe)
+    if scheme and scheme.group(1).lower() not in _SAFE_LINK_SCHEMES:
+        return label
+    href = url.replace('"', "&quot;").replace("'", "&#x27;")
+    return f'<a href="{href}">{label}</a>'
+
 _CSS = """
 :root { color-scheme: light; }
 body { margin: 0; background: #ffffff; color: #1c1c1c;
@@ -77,7 +107,7 @@ def _inline(text: str) -> str:
         if i % 2 == 1:
             out.append(f"<code>{part}</code>")
             continue
-        part = _LINK.sub(r'<a href="\2">\1</a>', part)
+        part = _LINK.sub(_link_tag, part)
         part = _BOLD.sub(r"<strong>\1</strong>", part)
         out.append(part)
     return "".join(out)

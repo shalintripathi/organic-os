@@ -193,3 +193,69 @@ def test_render_html_code_spans_are_literal():
 def test_render_html_escapes_inside_code_spans():
     out = R.render_html("x `<script>y</script>` z", title="T", site_name="S")
     assert "<code>&lt;script&gt;y&lt;/script&gt;</code>" in out
+
+
+# -- link safety (#19) ---------------------------------------------------------
+#
+# Report content carries brain data (titles, reasoning excerpts, URLs), so a
+# link URL is hostile input. A quote must not break out of the href attribute,
+# and only http, https, mailto, and relative URLs may become anchors; any
+# other scheme renders its label as plain text with no anchor at all.
+
+
+def test_link_url_quote_cannot_break_out_of_href():
+    out = R.render_html('[click](x"onmouseover="stealcookies)',
+                        title="T", site_name="S")
+    # The quote is an entity inside the attribute, nothing more...
+    assert '<a href="x&quot;onmouseover=&quot;stealcookies">click</a>' in out
+    # ...so the page contains no injected attribute anywhere.
+    assert '"x"onmouseover=' not in out
+    assert 'onmouseover="stealcookies"' not in out
+
+
+def test_javascript_scheme_link_renders_label_as_plain_text():
+    out = R.render_html("[click](javascript:doevil)", title="T", site_name="S")
+    assert "<p>click</p>" in out
+    assert "<a" not in out
+    assert "javascript" not in out
+    assert "doevil" not in out
+
+
+def test_data_scheme_link_renders_label_as_plain_text():
+    out = R.render_html("[click](data:text/html,ohno)", title="T", site_name="S")
+    assert "<p>click</p>" in out
+    assert "<a" not in out
+    assert "data:" not in out
+    assert "ohno" not in out
+
+
+def test_scheme_check_survives_case_and_control_char_tricks():
+    # Browsers lowercase the scheme and drop leading C0 controls before
+    # deciding what a URL means, so the renderer must normalize the same
+    # way or these two still execute.
+    for url in ("JaVaScRiPt:doevil", "\x01javascript:doevil"):
+        out = R.render_html(f"[click]({url})", title="T", site_name="S")
+        assert "<p>click</p>" in out, url
+        assert "<a" not in out, url
+        assert "doevil" not in out, url
+
+
+def test_safe_and_relative_link_schemes_still_render():
+    md = ("[site](https://example.com/page) "
+          "[plain](http://example.com/page) "
+          "[mail](mailto:team@example.com) "
+          "[root](/page) [file](page.html)")
+    out = R.render_html(md, title="T", site_name="S")
+    assert '<a href="https://example.com/page">site</a>' in out
+    assert '<a href="http://example.com/page">plain</a>' in out
+    assert '<a href="mailto:team@example.com">mail</a>' in out
+    assert '<a href="/page">root</a>' in out
+    assert '<a href="page.html">file</a>' in out
+
+
+def test_link_url_ampersand_is_escaped_exactly_once():
+    # The attribute pass must not re-escape what _inline already escaped.
+    out = R.render_html("[q](https://example.com/?a=b&c=d)",
+                        title="T", site_name="S")
+    assert '<a href="https://example.com/?a=b&amp;c=d">q</a>' in out
+    assert "&amp;amp;" not in out
