@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+## [0.5.3] - 2026-07-24
+
+### Fixed
+- The Monday report's link renderer escapes URLs for the attribute context
+  and allowlists link schemes. Before this, a double quote in a link URL
+  could break out of the `href` attribute and inject its own, and a
+  `javascript:` or `data:` URL became a clickable script link; both are
+  neutralized. `http`, `https`, `mailto`, and relative URLs render as
+  before; any other scheme renders its label as plain text with no anchor.
+  The check normalizes the way a browser would (case, leading control
+  characters) first. Found during the #18 review, closing #19.
+
 ## [0.5.2] - 2026-07-24
 
 ### Fixed
