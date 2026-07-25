@@ -426,3 +426,20 @@ which version is current:
   (see ADR-0006, `docs/adr/0006-no-scraping.md`) - organic-os ships no
   scraper by design; a licensed, official API is the only path to closing
   the rank-tracking coverage gap that decision leaves open.
+- **A brain large enough to strain plain-text retrieval** - roughly 100
+  signal files, or the point where a skill's memory read starts crowding
+  the context it needs for the actual work. Today a brain is small enough
+  that `decisions.search()`'s loose token overlap is the right tool: one
+  irrelevant hit a human skims costs far less than a missed prior
+  rejection. When the trigger fires, the fix is **progressive retrieval**
+  rather than a vector database - rank matching chunks, return excerpts
+  with a locator, and expand to the full section or the raw file only on
+  demand. That needs no new dependency and no index to keep in sync.
+  Pattern credit: [MemSearch](https://github.com/zilliztech/memsearch)'s
+  L1/L2/L3 progressive search. Its other pillars stay deliberately
+  unadopted: a local vector database and a downloaded embedding model
+  would break the no-server, no-database promise this project enforces in
+  CI, and live file watchers mean a background daemon organic-os has
+  never shipped. Semantic retrieval solves precision at volume; if
+  precision ever fails at volume, that is measurable, and it is the
+  moment to reconsider - not before.
