@@ -268,6 +268,30 @@ def set_status(path, status: str, actor: str, channel: str | None = None,
     _dump(Path(path), item["meta"], item["body"])
     if status == "rejected":
         _record_rejection(Path(path), item["meta"], actor, note)
+    _refresh_queue(Path(path))
+
+
+def _refresh_queue(path: Path) -> None:
+    """Best-effort rebuild of the derived approvals queue after a status change.
+
+    `approvals/queue.md` is derived: it is only ever true because something
+    rebuilt it. The CLI did; a skill calling set_status directly did not, so
+    the queue could sit frozen for days while the pipeline moved underneath it
+    - an operator reading a stale queue concludes the loop is dead. Making the
+    refresh part of the write puts the guarantee in the contract layer instead
+    of in every caller.
+
+    Runs only after the item is durably written, and NEVER fails the status
+    change: any exception here is swallowed. A derived-file refresh must not
+    roll back or block a real state transition (same reasoning as the advisory
+    redaction guard at the outbound sinks - a guard that becomes the reason a
+    transition does not happen is a worse failure than the one it watched for).
+    """
+    try:
+        # items live at <root>/{briefs,proposals}/
+        rebuild_queue(path.resolve().parent.parent)
+    except Exception:
+        pass
 
 
 def _record_rejection(path: Path, meta: dict, actor: str, note: str | None) -> None:
@@ -320,6 +344,7 @@ def reset_to_proposed(path, actor: str, note: str | None = None) -> None:
         stamp += f": {note}"
     item["meta"]["status_note"] = stamp
     _dump(Path(path), item["meta"], item["body"])
+    _refresh_queue(Path(path))
 
 
 def require_approved(path) -> dict:

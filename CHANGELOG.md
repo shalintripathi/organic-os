@@ -2,6 +2,17 @@
 
 ## [Unreleased]
 
+### Fixed
+- **core:** `set_status` now refreshes `approvals/queue.md` itself, so the
+  derived queue can no longer go stale. Only the CLI rebuilt it before, so a
+  skill calling `set_status` directly (publish, apply) left the queue frozen:
+  it kept listing items as pending for days after they were approved and
+  published, and an operator reading it concluded the loop had stopped. The
+  refresh runs after the item is durably written and is best-effort - any
+  failure inside it is swallowed, because a derived file must never roll back
+  or block a real state transition. `reset_to_proposed` refreshes the same
+  way.
+
 ## [0.5.3] - 2026-07-24
 
 ### Fixed

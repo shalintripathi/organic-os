@@ -757,3 +757,63 @@ def test_editorial_policy_ignores_unknown_keys_additively(root):
     policy = C.editorial_policy(root)
     assert policy["internal_links_min"] == 1
     assert "future_key" not in policy
+
+
+# -- derived queue stays true (the 12-day stale-queue bug) ---------------------
+
+def test_set_status_refreshes_the_derived_queue(root):
+    p = C.create_item(root, kind="content-brief", slug="auto-refresh", title="Auto",
+                      body="b", target="", source="s")
+    C.rebuild_queue(root)
+    assert "Auto" in (root / "approvals" / "queue.md").read_text()
+    # no explicit rebuild_queue call: the status change must refresh the queue
+    C.set_status(p, "approved", actor="shivaa", channel="in-session")
+    q = (root / "approvals" / "queue.md").read_text()
+    assert "Auto" not in q, "queue still lists an approved item as pending"
+
+
+def test_published_item_leaves_the_queue_without_explicit_rebuild(root):
+    p = C.create_item(root, kind="content-brief", slug="auto-published", title="Shipped",
+                      body="b", target="", source="s")
+    C.rebuild_queue(root)
+    item_id = C.load_item(p)["meta"]["id"]
+    assert item_id in (root / "approvals" / "queue.md").read_text()
+    C.set_status(p, "approved", actor="shivaa", channel="in-session")
+    C.set_status(p, "drafted", actor="agent")
+    C.set_status(p, "published", actor="agent")
+    assert item_id not in (root / "approvals" / "queue.md").read_text()
+
+
+def test_status_change_survives_a_failing_queue_rebuild(root, monkeypatch):
+    """The refresh is best-effort: a derived file must never be able to block
+    or roll back a real state transition."""
+    p = C.create_item(root, kind="onpage-fix", slug="rebuild-blows-up", title="t",
+                      body="b", target="https://ex.com/r", source="s")
+
+    def boom(_root):
+        raise OSError("queue file is read-only")
+
+    monkeypatch.setattr(C, "rebuild_queue", boom)
+    C.set_status(p, "approved", actor="shivaa", channel="in-session")
+    assert C.load_item(p)["meta"]["status"] == "approved"  # durable on disk
+
+
+def test_reset_to_proposed_refreshes_the_derived_queue(root):
+    p = _hand_birth(root, "drafted", slug="reset-refresh")
+    C.rebuild_queue(root)
+    assert "ILLEGAL-STATE" in (root / "approvals" / "queue.md").read_text()
+    C.reset_to_proposed(p, actor="operator")  # no explicit rebuild
+    q = (root / "approvals" / "queue.md").read_text()
+    assert "ILLEGAL-STATE" not in q
+    assert C.load_item(p)["meta"]["id"] in q  # now listed as pending
+
+
+def test_reset_to_proposed_survives_a_failing_queue_rebuild(root, monkeypatch):
+    p = _hand_birth(root, "drafted", slug="reset-rebuild-blows-up")
+
+    def boom(_root):
+        raise OSError("queue file is read-only")
+
+    monkeypatch.setattr(C, "rebuild_queue", boom)
+    C.reset_to_proposed(p, actor="operator")
+    assert C.load_item(p)["meta"]["status"] == "proposed"
