@@ -32,6 +32,23 @@
   or block a real state transition. `reset_to_proposed` refreshes the same
   way.
 
+## [0.5.4] - 2026-07-30
+
+### Fixed
+- The approvals queue could go stale and report work as pending long after it
+  had been approved, drafted, or published. `approvals/queue.md` is a derived
+  file, and only the CLI refreshed it, so any skill calling `set_status`
+  directly left it frozen. It now refreshes on every status change, best-effort
+  so a bookkeeping refresh can never block a real state transition. Found on a
+  live instance whose queue had been wrong for six days while the loop kept
+  working.
+- Notifications could be skipped silently. Sending was described in skill prose
+  as a three-step dance (check, send, mark), and prose steps get missed: on the
+  same live instance every item showed as never notified while the channel was
+  reachable the whole time. `approval.notify_pending` now sends and marks in one
+  call, so an item is marked only after a successful send and a failed send is
+  retried on the next run instead of being lost.
+
 ## [0.5.3] - 2026-07-24
 
 ### Fixed

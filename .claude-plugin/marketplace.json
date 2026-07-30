@@ -9,7 +9,7 @@
       "name": "organic-os",
       "source": "./plugin",
       "description": "An agentic organic-growth operating system: observe, decide, approve, apply, verify, learn. SEO + AEO/GEO + content + on-page execution with a memory that compounds.",
-      "version": "0.5.3",
+      "version": "0.5.4",
       "keywords": [
         "seo",
         "aeo",
