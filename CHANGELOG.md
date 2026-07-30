@@ -32,6 +32,49 @@
   or block a real state transition. `reset_to_proposed` refreshes the same
   way.
 
+## [0.6.0] - 2026-07-30
+
+### Added
+- **Early-stage mode: the loop is useful on a site that has impressions but
+  no clicks yet.** A two-week-old site with 13 indexed pages and 61
+  impressions across real commercial queries got the same report every
+  morning for twelve days: quiet day, nothing sent. The data was fine. Every
+  detector reading it assumed an established site - striking distance wants
+  positions 4.0-15.0 above the site's median impressions, content decay wants
+  50+ clicks in the older window, the anomaly check skips any metric whose
+  trailing median is under 10, cannibalization wants two pages splitting a
+  query - so a site with genuine, readable signal produced silence. Every
+  site starts there, so every operator would have hit it, and silence from
+  day 1 to day 90 is the worst experience this project can deliver.
+- **core:** `stage.classify(rows)` reads a GSC page/query pull and returns
+  the site's stage with the evidence sentence behind it: established at 100
+  or more clicks in the window, growing at 10 or more, early below that. Zero
+  impressions and zero clicks is early too but reads as "no search data yet",
+  which is a different situation from having impressions nobody clicks.
+- **core:** `stage.early_opportunities(rows, limit)` ranks what is worth
+  acting on by POSITION rather than volume, because volume carries no signal
+  yet. Four bands, each naming a lever instead of promising a result: top
+  (page one, zero clicks - title and description), page-two (11-30, the
+  closest thing to a breakthrough - on-page work), visible (31-70, being
+  considered but not competitive - depth or authority, not a title tweak),
+  distant (past 70 - a directional signal that the topic is targeted
+  correctly, not a task).
+
+### Changed
+- **skills:** `hoo-daily` and `hoo-weekly` classify the stage from their own
+  pull and record it as a `stage:` signal line. On an early site they report
+  how many queries the site is visible for, the closest-to-breakthrough
+  opportunities with their bands and levers, and the plain statement that
+  zero clicks at those positions is normal and not a fault. The volume-gated
+  detectors still skip, but now say they are dormant and name the threshold
+  that activates each, so the silence is explained rather than mysterious.
+  On growing and established sites nothing changes: every detector runs
+  exactly as before.
+- **skills:** the daily alert gains one case. On an early site the summary
+  goes out weekly, because a daily "still climbing" message is noise, but a
+  query the site was not visible for before always sends the day it appears -
+  that is the real progress signal at this stage.
+
 ## [0.5.5] - 2026-07-30
 
 ### Fixed
