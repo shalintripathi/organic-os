@@ -45,10 +45,15 @@ description: Use for any broad organic-growth request - "audit my organic presen
    creation. A brief that ce-produce will later draft still starts
    `proposed` and reaches `drafted` only through approved lineage.
 5. Rebuild the queue (`rebuild_queue`) and notify per the profile's approval
-   channel (see skills/onsite-apply for the adapter pattern). Only send items
-   where `is_notified(item)` is false; call `mark_notified(path)` right after
-   a successful send, so re-runs never re-notify the same item. Do NOT apply
-   anything: creating items is free, mutating the site is gated elsewhere.
+   channel (see skills/onsite-apply for the adapter pattern) with one call:
+   `PYTHONPATH="$CLAUDE_PLUGIN_ROOT/lib" python3 -c "..."` importing
+   `core.approval` and calling `notify_pending(<brain>, send)`, where `send`
+   delivers over that channel. It sends every un-notified proposed item and
+   marks each as it goes; an item is marked notified ONLY after its send
+   returns without raising, so a failed send is retried on the next run
+   rather than lost, and re-runs never re-notify. Do not call `is_notified`
+   or `mark_notified` by hand. Do NOT apply anything: creating items is free,
+   mutating the site is gated elsewhere.
 6. Tell the user: top 5 actions, what is queued for approval, what was skipped
    for missing credentials.
 

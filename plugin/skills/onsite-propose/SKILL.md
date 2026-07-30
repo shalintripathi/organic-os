@@ -31,10 +31,16 @@ description: Use to turn audit findings or signals into concrete gated change pr
    `create_item` is the ONLY birth path - items are born `proposed` with an
    empty approvals list; never write a `proposals/` file directly or set
    any other status at creation.
-4. Rebuild queue. Notify per the profile approval channel. Only send items
-   where `core.contracts.is_notified(item)` is false; call
-   `core.contracts.mark_notified(path)` immediately after a successful send
-   so re-runs never re-notify the same item:
+4. Rebuild queue (`create_item` births items; the rebuild is what puts them in
+   `approvals/queue.md`). Notify per the profile approval channel with ONE call:
+   `PYTHONPATH="$CLAUDE_PLUGIN_ROOT/lib" python3 -c "..."` importing
+   `core.approval` and calling `notify_pending(<brain>, send)`, where `send`
+   is a callable taking `(path, item)` and delivering over the channel chosen
+   below. It sends every un-notified proposed item and marks each as it goes.
+   An item is marked notified ONLY after its send returns without raising, so
+   a failed send is retried on the next run rather than lost, and re-runs
+   never re-notify. Do not call `is_notified` or `mark_notified` by hand.
+   Channel selection:
    - in-session: present now with AskUserQuestion (approve/reject each)
    - telegram: send via core.telegram `send_item` (token from env file), then
      poll with `core.approval.process_telegram_decisions` on the next run to

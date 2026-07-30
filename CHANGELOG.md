@@ -11,6 +11,16 @@
   without raising, so a failed send is retried on the next run instead of
   being silently lost, and one bad item does not stop the batch.
 
+### Changed
+- **skills:** the six skills that notify approvers (`hoo-daily`, `hoo-weekly`,
+  `hoo-orchestrator`, `onsite-propose`, `hoo-import-audit`,
+  `hoo-monthly-audit`) now call `core.approval.notify_pending` instead of
+  describing the check-send-mark sequence in prose. Each keeps its own
+  channel-selection logic; only the notify step changed.
+- **docs:** `site-repo-contract.md` states that `approvals/queue.md` is
+  derived and refreshed on every status change, so a queue that disagrees
+  with the item files is a bug to report, not a state to work around.
+
 ### Fixed
 - **core:** `set_status` now refreshes `approvals/queue.md` itself, so the
   derived queue can no longer go stale. Only the CLI rebuilt it before, so a

@@ -291,6 +291,32 @@ non-proposed status and an empty approvals list - a file written outside
 neither be approved nor pass a gate and would otherwise jam the pipeline
 silently.
 
+### The queue is DERIVED - a stale queue is a bug
+
+`approvals/queue.md` holds no state of its own. Every line in it is
+recomputed from the item files, which are the only source of truth; the
+file exists so a human can read the pending set at a glance. It is
+therefore only ever correct because something rebuilt it.
+
+`contracts.set_status` and `contracts.reset_to_proposed` rebuild it
+themselves, after the item is durably written. Any status change made
+through the contract layer - the CLI, a skill, a direct Python call -
+leaves the queue current. Nothing needs to remember to refresh it, and
+nothing should hand-edit the file: an edit is overwritten by the next
+status change.
+
+The rebuild is best-effort. If it fails (an unwritable file, a malformed
+sibling), the status change still succeeds and the queue is simply left
+at its previous content until the next change refreshes it. A derived
+file must never roll back or block a real state transition.
+
+So: if the queue disagrees with the item files, that is a defect to
+report, not an expected state to work around. An earlier version rebuilt
+the queue only in the CLI, so skills that published or applied items left
+it frozen - it kept listing work as pending for days after that work had
+shipped, and the operator reasonably read the stale queue as a dead
+pipeline.
+
 ## Re-verification keys in outcome records (additive)
 
 After a successful rendered-head-verified apply, `onsite-apply` writes a

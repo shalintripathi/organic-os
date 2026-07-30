@@ -22,8 +22,13 @@ description: Use for the monthly deep audit - "run the monthly audit", /organic-
    redirect chains - same signal severities, same one-proposal cap.
 3. Compare with last month's runs/ artifacts; the report leads with deltas.
 4. File signals, briefs, and fixes through core contracts; rebuild queue;
-   notify per approval channel. Only send items where `is_notified(item)` is
-   false; call `mark_notified(path)` right after a successful send.
+   notify per approval channel with one call:
+   `PYTHONPATH="$CLAUDE_PLUGIN_ROOT/lib" python3 -c "..."` importing
+   `core.approval` and calling `notify_pending(<brain>, send)`, where `send`
+   delivers over the configured channel (same channel selection as
+   skills/onsite-propose step 4). An item is marked notified ONLY after its
+   send returns without raising, so a failed send is retried on the next run
+   rather than lost. Do not call `is_notified` or `mark_notified` by hand.
 5. Output runs/YYYYMM-monthly/REPORT.md: executive summary in plain language,
    then per-specialist sections, then this month's queued work.
 

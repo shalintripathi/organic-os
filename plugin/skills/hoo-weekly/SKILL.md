@@ -25,9 +25,15 @@ scheduled runs receive the brain path from the routine configuration.
    whether a new AI citation explains the traffic.
 4. Invoke the organic-os:hoo-reflector skill to propose skillbook deltas from
    this week's signals + outcomes.
-5. Queue any proposed work items; rebuild queue; notify per approval channel.
-   Only send items where `is_notified(item)` is false; call `mark_notified(path)`
-   right after a successful send. Commit + push if git.
+5. Queue any proposed work items; rebuild queue; notify per approval channel
+   with one call:
+   `PYTHONPATH="$CLAUDE_PLUGIN_ROOT/lib" python3 -c "..."` importing
+   `core.approval` and calling `notify_pending(<brain>, send)`, where `send`
+   delivers over the configured channel (same channel selection as
+   skills/onsite-propose step 4). An item is marked notified ONLY after its
+   send returns without raising, so a failed send is retried on the next run
+   rather than lost. Do not call `is_notified` or `mark_notified` by hand.
+   Commit + push if git.
 
 Any content brief this run emits for comparison-intent queries (vs,
 alternative, best X for) sets `brief_type="comparison"` on `create_item`;

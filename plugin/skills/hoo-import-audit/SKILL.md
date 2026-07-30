@@ -44,9 +44,12 @@ silently rewritten.
    - unparsed excerpt count, with a pointer that the excerpts were
      preserved, not dropped
 5. Rebuild the queue and route the approval notification through the
-   configured channel exactly like any propose run (skills/onsite-propose
-   step 4, including the is_notified/mark_notified discipline so re-runs
-   never re-notify).
+   configured channel exactly like any propose run: one
+   `core.approval.notify_pending(<brain>, send)` call with the channel
+   selection from skills/onsite-propose step 4. An item is
+   marked notified ONLY after its send returns without raising, so a failed
+   send is retried on the next run rather than lost, and re-runs never
+   re-notify.
 6. Append ONE signal recording the import: source audit date
    (`parsed["source_meta"]["audit_date"]`), items parsed, proposals
    created, skipped count, unparsed excerpt count.

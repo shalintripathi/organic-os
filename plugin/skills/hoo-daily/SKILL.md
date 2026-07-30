@@ -113,8 +113,13 @@ scheduled runs receive the brain path from the routine configuration.
      state marker; do not create a new state file for it.
 4. If an observation crosses P1 (drop > 30% on a money page), also
    `create_item(kind="onpage-fix"...)` or `kind="strategy"` and notify per the
-   approval channel. Only send items where `is_notified(item)` is false; call
-   `mark_notified(path)` right after a successful send.
+   approval channel with one call:
+   `PYTHONPATH="$CLAUDE_PLUGIN_ROOT/lib" python3 -c "..."` importing
+   `core.approval` and calling `notify_pending(<brain>, send)`, where `send`
+   delivers over the configured channel (same channel selection as
+   skills/onsite-propose step 4). An item is marked notified ONLY after its
+   send returns without raising, so a failed send is retried on the next run
+   rather than lost. Do not call `is_notified` or `mark_notified` by hand.
 5. Outcome follow-ups: for items in `outcomes/` with a due measurement date of
    today, run the measurement per skills/onsite-measure and record.
 5.5. Applied-change re-verification: scan `outcomes/` for records with a
