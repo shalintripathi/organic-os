@@ -75,6 +75,29 @@
   query the site was not visible for before always sends the day it appears -
   that is the real progress signal at this stage.
 
+## [0.6.0] - 2026-07-30
+
+### Added
+- The daily and weekly routines now classify a site's stage from its own data
+  and speak to it. Every detector this project ships assumes an established
+  site: striking distance wants positions 4 to 15, decay wants 50 clicks in the
+  older window, anomaly alerts skip a metric whose median is under 10. A new
+  site clears none of those bars, so the loop reported "quiet day, nothing sent"
+  while sitting on real data - indexed pages, live queries, climbing positions.
+  Twelve days of that reads as a broken product, and every site starts there.
+- On an early-stage site the routines now report which queries the site is
+  visible for, the closest-to-breakthrough opportunities banded by position
+  (top, page-two, visible, distant) with the lever that plausibly moves each,
+  and an explicit line that zero clicks at those positions is expected rather
+  than a fault. The dormant detectors are named along with the threshold that
+  will wake each one, so silence is explained instead of mysterious.
+- Early-stage sites get the channel summary weekly rather than daily, since a
+  daily "still climbing" is noise, but always get an alert the moment a query
+  appears that the site was not visible for before. On a new site that is the
+  real progress signal.
+- Growing and established sites are unaffected: all detectors behave exactly as
+  before.
+
 ## [0.5.5] - 2026-07-30
 
 ### Fixed
