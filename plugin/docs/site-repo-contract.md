@@ -199,6 +199,27 @@ Ten optional `site-profile.yaml` keys are additive the same way
   time and otherwise ends the item partially-applied naming the manual
   step). See the redirect-fixes section in skills/onsite-apply.
 
+## The stage line in signals (additive)
+
+A daily or weekly run that pulled GSC data records one more structured
+line in `signals/YYYY-MM-DD.md`: the token
+`stage: <early|growing|established>` followed by the one-sentence reason
+that produced it. Additive in the same sense as everything else in this
+section - `schema_version` stays `1`, older signal files simply do not
+carry the line, and a run with no GSC pull writes no `stage:` line rather
+than a guessed one.
+
+The stage is computed by `core.stage.classify` from that run's own
+page/query rows, and the thresholds live in that module (see
+`docs/INFORMATION-MAP.md` in the repo). It exists because every detector
+in the loop gates on click or impression volume, so a site that has
+impressions and no clicks trips none of them and reads as silence. The
+stage is what lets the routines say which situation the site is actually
+in and report position-based opportunities instead of a quiet day. An
+EARLY site's daily also carries a `stage-summary-sent:` marker line on
+the days its weekly channel summary goes out, read the same way as
+`nudge-sent:` (see skills/hoo-daily).
+
 ## The export run dir (additive)
 
 `runs/<UTCdate>-export/` is written by `core.export.export_all` (the

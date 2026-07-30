@@ -23,6 +23,20 @@ scheduled runs receive the brain path from the routine configuration.
    landing page (3 or more of the week's daily lines) feeds the citation
    tracker: name the page in REPORT.md so the next citation run checks
    whether a new AI citation explains the traffic.
+3.5. Stage classification. Build rows from this run's GSC page/query pull
+   (one dict per query: clicks, impressions, position, plus query and page
+   where the pull has them) and call `core.stage.classify(rows)`:
+   `PYTHONPATH="$CLAUDE_PLUGIN_ROOT/lib" python3 -c "..."` importing
+   `core.stage`. The thresholds live in that module and are never
+   restated here (see docs/INFORMATION-MAP.md in the repo). Record the
+   result as ONE structured signal line - the exact token
+   `stage: <early|growing|established>` followed by the returned reason
+   sentence - and repeat it as the first line of REPORT.md. No GSC pull
+   this run means no `stage:` line at all, never a guessed one.
+   GROWING or ESTABLISHED: every section below runs exactly as it runs
+   today; this step changes nothing for a site that has clicks. EARLY:
+   run the early-stage report below in place of the three volume-gated
+   detectors.
 4. Invoke the organic-os:hoo-reflector skill to propose skillbook deltas from
    this week's signals + outcomes.
 5. Queue any proposed work items; rebuild queue; notify per approval channel
@@ -85,7 +99,48 @@ records `cause: unknown (no <comparison> run)` instead of a likely story.
 A named diagnosis that no one checked is worse than an admitted unknown,
 because the next run treats it as settled.
 
+## Early-stage report
+
+Runs in place of the three detectors below when step 3.5 classified the
+site EARLY and this run pulled any impressions. Those detectors all gate
+on click or impression volume, which is precisely the signal a new site
+does not have yet, so on an EARLY site they return nothing and the week
+reads as silence. It is not silence: position is readable from day one.
+
+1. Call `core.stage.early_opportunities(rows)` on the same rows step 3.5
+   built. In REPORT.md and as signals, report how many queries the site
+   is visible for and across how many pages, then one line per returned
+   opportunity: query | page | position | impressions | band | the lever
+   from the note. The note names the lever; it never claims a position
+   change will follow, the same discipline the attribution rule above
+   enforces on causes.
+2. State the expectation plainly: zero clicks at these positions is
+   normal and not a fault. Nothing is being ranked and skipped over;
+   there is nothing high enough yet to be clicked.
+3. Say what would change the picture, naming this week's specific pages
+   and queries rather than generic advice: title and description work on
+   the `top` band, on-page work on `page-two`, depth or authority on
+   `visible`, and time - indexing and position move over weeks.
+4. Name the dormant detectors and the threshold that activates each, one
+   summary line in REPORT.md, so the operator knows why three sections
+   below are empty:
+   - striking distance: positions 4.0-15.0 with impressions above the
+     site's median impressions for the period.
+   - cannibalization: two pages each earning impressions on one query.
+   - content decay: 50 or more clicks on a page in the older 28-day
+     window.
+5. Week-over-week progress is the headline at this stage, so state it:
+   new queries the site became visible for since last week, and any
+   opportunity that changed band. First run on an EARLY site: say that
+   the comparison starts this week rather than implying movement.
+
+Classified EARLY with zero impressions: skip this section and note it in
+REPORT.md as one line ("early-stage report: skipped, no impressions
+yet"). There are no positions to band.
+
 ## Striking distance
+
+EARLY site (step 3.5): dormant, see the early-stage report above.
 
 1. Pull GSC queries for the last 28 days for the profile's site.
 2. Filter to positions 4.0-15.0 with impressions above the site's median
@@ -108,6 +163,8 @@ No GSC connector: skip this section and note it as one line in REPORT.md
 ("striking distance: skipped, no GSC connector") instead of guessing.
 
 ## Cannibalization
+
+EARLY site (step 3.5): dormant, see the early-stage report above.
 
 1. From the same 28-day GSC query pull, find queries where two or more
    pages each earned impressions and neither holds a stable majority
@@ -137,6 +194,8 @@ No GSC connector: skip this section and note it as one line in REPORT.md
 ("cannibalization: skipped, no GSC connector") instead of guessing.
 
 ## Content decay
+
+EARLY site (step 3.5): dormant, see the early-stage report above.
 
 1. Pull each page's GSC clicks for the last 28 days and for the same
    page's 28-day window starting 90 days prior - two date-windowed pulls,

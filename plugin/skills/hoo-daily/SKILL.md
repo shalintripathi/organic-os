@@ -82,9 +82,33 @@ scheduled runs receive the brain path from the routine configuration.
    Rationale: alerting is the retention feature of every commercial
    monitor; ours rides the existing channel taxonomy instead of adding a
    dashboard (ROADMAP, v0.4).
+2.8. Stage classification. Every detector in this skill and in
+   skills/hoo-weekly was written for a site that already earns clicks, so
+   a new site trips none of them and the loop goes quiet for months. Decide
+   which stage this site is in, from its own numbers, before reporting
+   anything.
+   - Build rows from the GSC page/query pull step 2 already made: one dict
+     per query carrying clicks, impressions, position, and the query and
+     page where the pull has them.
+   - Call `core.stage.classify(rows)`:
+     `PYTHONPATH="$CLAUDE_PLUGIN_ROOT/lib" python3 -c "..."` importing
+     `core.stage`. The thresholds live in that module, never restated here
+     (see docs/INFORMATION-MAP.md in the repo).
+   - Record it as ONE structured signal line: the exact token
+     `stage: <early|growing|established>` followed by the returned reason
+     sentence. No GSC pull this run means no `stage:` line at all, never a
+     guessed one.
+   - GROWING or ESTABLISHED: nothing else changes. Every section of this
+     skill and of skills/hoo-weekly runs exactly as it runs today. This
+     step is purely additive for a site that has clicks.
+   - EARLY: run the early-stage report below instead of reporting a quiet
+     day.
 3. Write one `append_signal` line per notable observation (threshold: any WoW
    move > 10% or position change > 2 or a new AI citation appearing/vanishing).
    Quiet days produce one line: "no notable movement (checked: <sources>)".
+   EXCEPTION: on an EARLY site with any impressions this run, a day is
+   never quiet - the early-stage report below is what gets written, and
+   "no notable movement" is wrong on data that says the site is visible.
    If neither GSC nor GA4 was reachable this run (both connectors read
    anything other than `verified` in `connectors:`), write the literal line
    `no-data: GSC/GA4 not reachable from this runtime (checked: none)` instead
@@ -146,6 +170,51 @@ Run cost: wrapper-invoked runs land one row (date, duration, tokens where
 the CLI reports them) in `~/.config/organic-os/cost-ledger-YYYYMM.tsv`;
 the wrapper writes it, this skill never does - the Monday report reads it.
 
+## Early-stage report
+
+Runs only when step 2.8 classified the site EARLY and this run pulled any
+impressions at all. A site with impressions and no clicks is not a quiet
+site; it is a site whose only readable signal is position. Reporting "no
+notable movement" on it is the worst thing this loop can do, because it
+reads as a broken product on exactly the days when the operator could
+still act on what the data does say.
+
+1. Call `core.stage.early_opportunities(rows)` on the same rows step 2.8
+   built, and write into today's signal:
+   - how many queries the site is visible for and across how many pages
+     (the `classify` result carries both counts);
+   - one line per returned opportunity: query | page | position |
+     impressions | band | the lever from the note. The note names the
+     lever, never a promised position change - a prediction nobody
+     measured is not a finding, which is the same discipline the
+     attribution rule in step 2.7 enforces on causes.
+2. State the expectation plainly, in the signal and in any message that
+   goes out: zero clicks at these positions is normal and not a fault.
+   Nothing is being ranked and skipped over; there is simply nothing high
+   enough yet to be clicked.
+3. Say what would change the picture, naming the specific pages and
+   queries from step 1 rather than generic advice: title and description
+   work on anything in the `top` band, on-page work on the `page-two`
+   queries, depth or authority on the `visible` ones, and time -
+   indexing and position both move over weeks, not days.
+4. Name the dormant detectors and the threshold that activates each, so
+   the silence is explained instead of mysterious. All four stay skipped
+   on an EARLY site; the point is to say so rather than to run them:
+   - anomaly check (step 2.7): needs a trailing 7-day median of 10 or
+     more on a headline metric, plus 4 prior daily signals carrying it.
+   - striking distance (skills/hoo-weekly): needs queries at positions
+     4.0-15.0 with impressions above the site's median.
+   - content decay (skills/hoo-weekly): needs 50 or more clicks on a page
+     in the older 28-day window.
+   - cannibalization (skills/hoo-weekly): needs two pages each earning
+     impressions on the same query.
+   One summary line in the signal covers all four; do not repeat the list
+   every day at length.
+
+Classified EARLY with zero impressions: skip this section. There are no
+positions to band yet, and the `stage:` line from step 2.8 already says
+so in the words `no search data yet`.
+
 ## Drift watch
 
 Runs only when the profile's WordPress connector is verified - drift is
@@ -184,6 +253,8 @@ hear anything today. Actionable content is exactly:
   re-verifications from step 5.5)
 - the no-data nudge from step 3.5
 
+- the early-stage summary, on the cadence below
+
 If any exist, send ONE message through the configured approval channel,
 using the same channel-neutral delivery as the step 3.5 nudge (telegram:
 one `sendMessage`; slack: one post; email: one send; in-session: print
@@ -193,3 +264,25 @@ instead of going out separately - never two messages per day. Quiet days
 send NOTHING: no "all quiet" spam. The signal file already records the
 quiet day; silence on the channel means no action needed, never that
 something was hidden.
+
+### Early-stage cadence
+
+On an EARLY site (step 2.8) a daily "still climbing" message is noise, so
+the early-stage summary goes out WEEKLY rather than daily. Send it when
+either is true:
+
+- no `stage-summary-sent:` line appears in the last 7 days of signal
+  files - the same 7-day marker discipline as the no-data nudge in step
+  3.5;
+- OR a new query appeared this run: a query in today's opportunity list
+  that no daily signal in the trailing 28 days recorded a line for. This
+  one ALWAYS sends, whatever the weekly marker says. A query the site was
+  not visible for before is the real progress signal at this stage, and
+  sitting on it for six days would bury the only good news a new site
+  gets. Name the new queries first in the message.
+
+Mark a sent summary by appending `stage-summary-sent: early-stage summary`
+to today's signal via `append_signal` - the same state-marker pattern as
+`nudge-sent:`, no new state file. P1 signals and the no-data nudge keep
+their own rules and still go out the day they occur; when they land on
+the same day as the summary they ride inside the same single message.
