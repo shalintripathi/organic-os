@@ -148,3 +148,105 @@ def test_find_skips_a_malformed_sibling_file(tmp_path):
     (tmp_path / "briefs" / "broken.md").write_text("no frontmatter here at all\n")
     found = A.find(str(tmp_path), "b-20260101-good")
     assert found.name == "good.md"
+
+
+# -- notify_pending: send and mark are one operation --------------------------
+
+def _brain(tmp_path):
+    return init_site_repo(tmp_path / "b", "https://e.com", "E")
+
+
+class Recorder:
+    """A send channel that remembers what it was handed."""
+
+    def __init__(self, fails_for=()):
+        self.sent = []
+        self.fails_for = set(fails_for)
+
+    def __call__(self, path, item):
+        title = item["meta"]["title"]
+        if title in self.fails_for:
+            raise RuntimeError("channel unreachable")
+        self.sent.append(title)
+
+
+def test_notify_pending_sends_and_marks(tmp_path):
+    root = _brain(tmp_path)
+    p = C.create_item(root, "content-brief", "brief-one", "One", "b", "", "s")
+    send = Recorder()
+    results = A.notify_pending(root, send)
+    assert send.sent == ["One"]
+    assert results == [(p, "sent")]
+    assert C.is_notified(C.load_item(p)) is True
+
+
+def test_notify_pending_never_sends_twice(tmp_path):
+    root = _brain(tmp_path)
+    p = C.create_item(root, "content-brief", "brief-once", "Once", "b", "", "s")
+    send = Recorder()
+    A.notify_pending(root, send)
+    results = A.notify_pending(root, send)
+    assert send.sent == ["Once"], "the same item was announced twice"
+    assert results == [(p, "skipped-already-notified")]
+
+
+def test_notify_pending_leaves_a_failed_send_unmarked_and_retries(tmp_path):
+    root = _brain(tmp_path)
+    p = C.create_item(root, "content-brief", "brief-flaky", "Flaky", "b", "", "s")
+    failing = Recorder(fails_for={"Flaky"})
+    assert A.notify_pending(root, failing) == [(p, "failed")]
+    assert failing.sent == []
+    assert C.is_notified(C.load_item(p)) is False, "marked notified despite a failed send"
+
+    working = Recorder()
+    assert A.notify_pending(root, working) == [(p, "sent")]  # the retry lands
+    assert working.sent == ["Flaky"]
+    assert C.is_notified(C.load_item(p)) is True
+
+
+def test_notify_pending_one_failure_does_not_stop_the_batch(tmp_path):
+    root = _brain(tmp_path)
+    C.create_item(root, "content-brief", "batch-a", "A", "b", "", "s")
+    C.create_item(root, "content-brief", "batch-b", "B", "b", "", "s")
+    C.create_item(root, "content-brief", "batch-c", "C", "b", "", "s")
+    send = Recorder(fails_for={"B"})
+    outcomes = sorted(o for _, o in A.notify_pending(root, send))
+    assert send.sent == ["A", "C"]
+    assert outcomes == ["failed", "sent", "sent"]
+
+
+def test_notify_pending_ignores_items_past_proposed(tmp_path):
+    root = _brain(tmp_path)
+    approved = C.create_item(root, "content-brief", "already-approved", "Approved",
+                             "b", "", "s")
+    C.set_status(approved, "approved", actor="shivaa", channel="in-session")
+    C.create_item(root, "content-brief", "still-proposed", "Proposed", "b", "", "s")
+    send = Recorder()
+    A.notify_pending(root, send)
+    assert send.sent == ["Proposed"]
+
+
+def test_notify_pending_respects_kinds(tmp_path):
+    root = _brain(tmp_path)
+    C.create_item(root, "content-brief", "kind-brief", "Brief", "b", "", "s")
+    C.create_item(root, "onpage-fix", "kind-fix", "Fix", "b", "https://e.com/f", "s")
+    send = Recorder()
+    A.notify_pending(root, send, kinds=["onpage-fix"])
+    assert send.sent == ["Fix"]
+    assert C.is_notified(C.load_item(A.find(root, "b-" + dt.datetime.now(
+        dt.timezone.utc).strftime("%Y%m%d") + "-kind-brief"))) is False
+
+
+def test_notify_pending_limit_caps_sends_and_the_rest_wait(tmp_path):
+    root = _brain(tmp_path)
+    C.create_item(root, "content-brief", "cap-a", "A", "b", "", "s")
+    C.create_item(root, "content-brief", "cap-b", "B", "b", "", "s")
+    first = Recorder()
+    assert [o for _, o in A.notify_pending(root, first, limit=1)] == ["sent"]
+    assert first.sent == ["A"]
+
+    # the item the limit deferred is still un-notified, so the next run takes it
+    second = Recorder()
+    assert [o for _, o in A.notify_pending(root, second)] == [
+        "skipped-already-notified", "sent"]
+    assert second.sent == ["B"]

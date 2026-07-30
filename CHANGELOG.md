@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+### Added
+- **core:** `approval.notify_pending(root, send, kinds, limit)` sends every
+  un-notified proposed item exactly once and marks each as it goes. The
+  check-send-mark sequence used to be prose in six skills, and prose gets
+  skipped: items stayed marked un-notified over a working channel, so nothing
+  ever reached the approver. An item is marked only after `send` returns
+  without raising, so a failed send is retried on the next run instead of
+  being silently lost, and one bad item does not stop the batch.
+
 ### Fixed
 - **core:** `set_status` now refreshes `approvals/queue.md` itself, so the
   derived queue can no longer go stale. Only the CLI rebuilt it before, so a

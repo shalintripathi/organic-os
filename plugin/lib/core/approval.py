@@ -29,6 +29,54 @@ def find(root, item_id: str):
     raise C.ContractError(f"no item {item_id}")
 
 
+def notify_pending(root, send, kinds=None, limit=None) -> list:
+    """Send every un-notified proposed item exactly once, marking each as it goes.
+
+    `send` is a callable taking (item_path, item_dict) and performing the
+    actual delivery (telegram, in-session print, whatever the channel is).
+    Returns a list of (path, outcome) where outcome is 'sent' |
+    'skipped-already-notified' | 'failed'.
+
+    An item is marked notified ONLY after `send` returns without raising, so a
+    failed send is retried on the next run rather than silently swallowed.
+    This exists because the same three steps written as prose in a skill get
+    skipped: a live instance ran twelve days with every item still marked
+    notified=NO over a working, reachable bot. Send-then-mark belongs in one
+    call so a caller cannot send without marking, or mark without sending.
+
+    `kinds` filters by item kind (a single kind or an iterable of them);
+    `limit` caps how many sends are attempted, counting attempts rather than
+    items, so already-notified items never consume the budget. One failing
+    item never stops the batch.
+    """
+    if isinstance(kinds, str):
+        kinds = {kinds}
+    elif kinds is not None:
+        kinds = set(kinds)
+
+    results, attempted = [], 0
+    for item in pending(root):
+        if kinds is not None and item["meta"].get("kind") not in kinds:
+            continue
+        path = item["path"]
+        if C.is_notified(item):
+            results.append((path, "skipped-already-notified"))
+            continue
+        if limit is not None and attempted >= limit:
+            break
+        attempted += 1
+        try:
+            send(path, item)
+        except Exception:
+            # Unmarked and reported: the next run retries it. Swallowing the
+            # failure here would turn a broken channel into permanent silence.
+            results.append((path, "failed"))
+            continue
+        C.mark_notified(path)
+        results.append((path, "sent"))
+    return results
+
+
 def record_decision(root, item_id: str, decision: str, actor: str, channel: str,
                     note: str | None = None) -> None:
     """Records a decision. Replay-tolerant: poll loops may deliver the same
