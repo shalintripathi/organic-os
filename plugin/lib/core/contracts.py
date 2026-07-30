@@ -587,10 +587,23 @@ def rebuild_queue(root) -> Path:
     rows = []
     for folder in ("briefs", "proposals"):
         for f in sorted((root / folder).glob("*.md")):
+            # content-engine writes `<brief>.draft.md` sidecars alongside the
+            # brief they belong to. A draft is not an item and carries no
+            # status, so it is skipped rather than read as one.
+            if f.name.endswith(".draft.md"):
+                continue
             try:
                 meta = load_item(f)["meta"]
             except ContractError:
                 rows.append(f"- MALFORMED: {folder}/{f.name}")
+                continue
+            # A file that parses but lacks the keys every item is born with
+            # is still malformed. Surface it; never let a missing key raise
+            # here, because this rebuild runs inside a best-effort refresh
+            # and an exception would silently freeze the queue for good.
+            if not {"status", "id", "kind", "title", "created"} <= set(meta):
+                rows.append(f"- MALFORMED: {folder}/{f.name} "
+                            "(missing required frontmatter)")
                 continue
             # Lint: every approvals entry must carry a decision field. An
             # entry without one is the fingerprint of a hand-edit that

@@ -7,7 +7,7 @@
   <circle cx="60" cy="16" r="6" fill="#27c93f"/>
   <text x="320" y="20" text-anchor="middle" font-family="monospace" font-size="12" fill="#6c7086">claude</text>
   <text x="20" y="62" font-family="monospace" font-size="15" fill="#89b4fa">&gt; /plugin install organic-os@organic-os</text>
-  <text x="20" y="90" font-family="monospace" font-size="15" fill="#a6e3a1">Installed organic-os v0.5.4</text>
+  <text x="20" y="90" font-family="monospace" font-size="15" fill="#a6e3a1">Installed organic-os v0.5.5</text>
   <text x="20" y="118" font-family="monospace" font-size="15" fill="#cdd6f4">Configure organic-os (every field optional):</text>
   <text x="36" y="146" font-family="monospace" font-size="15" fill="#6c7086">Site URL</text>
   <text x="300" y="146" font-family="monospace" font-size="15" fill="#cdd6f4">https://example.com</text>

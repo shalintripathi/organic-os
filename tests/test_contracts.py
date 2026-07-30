@@ -817,3 +817,28 @@ def test_reset_to_proposed_survives_a_failing_queue_rebuild(root, monkeypatch):
     monkeypatch.setattr(C, "rebuild_queue", boom)
     C.reset_to_proposed(p, actor="operator")
     assert C.load_item(p)["meta"]["status"] == "proposed"
+
+
+def test_rebuild_queue_survives_a_draft_sidecar(tmp_path):
+    """content-engine writes `<brief>.draft.md` sidecars next to briefs.
+
+    Those are drafts, not items: no status frontmatter. Globbing `*.md`
+    picked them up and rebuild_queue died on the missing key, so on a real
+    brain the queue silently froze while the loop kept working. A sidecar
+    must be ignored, and any unparseable item must be surfaced rather than
+    crash the rebuild.
+    """
+    root = tmp_path / "brain"
+    init_site_repo(root, site_url="https://example.com", site_name="Example")
+    C.create_item(root, "content-brief", "real-brief", "Real brief", "Body",
+                  target="/x/", source="test")
+    (root / "briefs" / "real-brief.md.draft.md").write_text(
+        "# A draft with no frontmatter at all\n\nbody\n")
+    (root / "briefs" / "headless.md").write_text(
+        "---\ntitle: no status here\n---\n\nbody\n")
+
+    q = C.rebuild_queue(root).read_text()
+
+    assert "real-brief" in q
+    assert "draft.md" not in q
+    assert "MALFORMED: briefs/headless.md" in q

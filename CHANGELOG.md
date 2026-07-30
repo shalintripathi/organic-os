@@ -32,6 +32,17 @@
   or block a real state transition. `reset_to_proposed` refreshes the same
   way.
 
+## [0.5.5] - 2026-07-30
+
+### Fixed
+- The queue rebuild crashed on a draft sidecar. content-engine writes
+  `<brief>.draft.md` next to the brief it belongs to; the rebuild globbed
+  every `.md` and died on the missing status key. Combined with the
+  best-effort wrapper added in 0.5.4, that meant a brain containing any
+  drafted content would silently stop refreshing its queue forever. Drafts
+  are now skipped, and an item that parses but lacks required frontmatter is
+  reported as malformed instead of raising.
+
 ## [0.5.4] - 2026-07-30
 
 ### Fixed
