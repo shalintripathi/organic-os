@@ -115,3 +115,76 @@ def classify(rows) -> dict:
 
     return {"stage": name, "clicks": clicks, "impressions": impressions,
             "pages": pages, "reason": reason}
+
+
+def band_for(position, clicks=0):
+    """Which band a query sits in, or None when it is not an opportunity.
+
+    Bands are read as "up to and including": top at position 10.0 or
+    better, page-two above 10.0 through 30.0, visible above 30.0 through
+    70.0, distant beyond 70.0. Integer positions therefore fall where the
+    names say - 11 to 30 is page two, 31 to 70 is visible, 71 and beyond is
+    distant - and a fractional average position lands somewhere definite
+    instead of in a gap between bands.
+
+    Two rows return None rather than a band. A row with no readable
+    position has an unknown position, and guessing one would be worse than
+    leaving it out. A row on the first page that ALREADY earns clicks is
+    working, not an opportunity for a routine whose whole subject is
+    queries earning nothing.
+    """
+    pos = _num(position)
+    if pos is None or pos <= 0:
+        return None
+    if pos <= TOP_MAX:
+        return "top" if _int(clicks) == 0 else None
+    if pos <= PAGE_TWO_MAX:
+        return "page-two"
+    if pos <= VISIBLE_MAX:
+        return "visible"
+    return "distant"
+
+
+def early_opportunities(rows, limit=5) -> list:
+    """What is worth acting on when nothing has clicks yet.
+
+    Ranks by how close a query is to breaking through, using POSITION
+    rather than click volume, because at this stage volume carries no
+    signal: a site with 61 impressions and zero clicks has a real, readable
+    query set, and every volume-gated detector in the loop reads it as
+    silence.
+
+    Returns a list of {query, page, position, impressions, band, note},
+    ordered by band priority (top, page-two, visible, distant) and then by
+    impressions descending, capped at `limit` (None means no cap). Empty
+    input returns [].
+
+    What each band means, and the lever it points at:
+
+    - "top" (position 10 or better with zero clicks): ranking but not
+      earning the click. The title and description are the lever.
+    - "page-two" (position 11-30): the closest thing to a breakthrough.
+      On-page work plausibly moves these.
+    - "visible" (position 31-70): the page is being considered but is not
+      competitive. Content depth or authority is the lever, not a title
+      tweak.
+    - "distant" (position beyond 70): appearing at all confirms the topic
+      is targeted correctly. Treat it as a directional signal, not a task.
+
+    The notes describe the lever; they never claim a position change will
+    follow from pulling it. Same evidence discipline as everything else in
+    this loop: a prediction nobody measured is not a finding.
+    """
+    out = []
+    for row in list(rows or []):
+        band = band_for(row.get("position"), row.get("clicks"))
+        if band is None:
+            continue
+        out.append({"query": row.get("query", ""),
+                    "page": row.get("page", ""),
+                    "position": _num(row.get("position")),
+                    "impressions": _int(row.get("impressions")),
+                    "band": band,
+                    "note": _NOTES[band]})
+    out.sort(key=lambda o: (BANDS.index(o["band"]), -o["impressions"]))
+    return out if limit is None else out[:limit]
