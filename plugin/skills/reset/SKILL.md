@@ -36,10 +36,9 @@ confirmation. Everything else is the user's own action - state why for each.
    file or cron entry in their CI system. organic-os does not manage the
    runtime's own scheduler and cannot deregister a routine for them.
 2. **Registry entry**: with explicit confirmation, remove the site from
-   `~/.config/organic-os/sites.yaml` (edit the YAML directly following the
-   registry's own atomic-write + `chmod 600` pattern - `core.registry` does
-   not expose a delete helper). If the removed site was active, tell the user
-   no site is active until they register or switch to another one.
+   `~/.config/organic-os/sites.yaml` by calling `core.registry.unregister(<slug>)`.
+   If the removed site was active, tell the user no site is active until
+   they register or switch to another one.
 3. **Brain repo**: organic-os never deletes it, on this skill's own authority
    or the user's request in this session. It is the site's memory - signals,
    decisions, reflections, skillbook, outcomes - and often has git history the
