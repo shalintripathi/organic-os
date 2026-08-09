@@ -3,6 +3,9 @@ on:
   push:
     branches: [main, 'build/**']
   pull_request:
+# CI only checks out code and runs tests; the token needs nothing but read.
+permissions:
+  contents: read
 jobs:
   audit-and-test:
     runs-on: ubuntu-latest
