@@ -67,13 +67,15 @@ def sanitize_bot_token(token: str) -> str:
     cleaned = str(token).strip()
     if not cleaned:
         raise RuntimeError("telegram bot token is empty")
-    # Reject any remaining whitespace or ASCII controls (incl. newline/tab).
-    # http.client also rejects DEL (0x7f) and C1 controls (0x80-0x9f); a
-    # token containing those passes this check but fails deeper in the stack.
-    if any(ch.isspace() or ord(ch) < 32 or 0x7f <= ord(ch) <= 0x9f for ch in cleaned):
+    # Reject anything that is not printable ASCII. A real token is digits, a
+    # colon, and [A-Za-z0-9_-]; http.client rejects everything else it
+    # cannot put in an ASCII URL path (whitespace, DEL, C1 controls,
+    # zero-width space, BOM, non-breaking space, accented letters, and so on).
+    if any(ch.isspace() or ord(ch) < 0x20 or ord(ch) > 0x7e for ch in cleaned):
         raise RuntimeError(
-            "telegram bot token contains whitespace or control characters; "
-            "strip the token (e.g. trailing newline from a file) and retry"
+            "telegram bot token contains whitespace, control characters, "
+            "or other non-ASCII characters; strip the token (e.g. trailing "
+            "newline from a file) and retry"
         )
     return cleaned
 
