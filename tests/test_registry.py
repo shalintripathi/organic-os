@@ -67,6 +67,50 @@ def test_get_active_none_when_no_registry(tmp_path):
     assert R.get_active(tmp_path / "sites.yaml") is None
 
 
+def test_unregister_removes_only_that_slug(tmp_path):
+    path = tmp_path / "sites.yaml"
+    slug1 = R.register("https://one.com", "One", "/brains/one", path=path)
+    slug2 = R.register("https://two.com", "Two", "/brains/two", path=path)
+    R.unregister(slug1, path=path)
+    assert set(R.load(path)["sites"]) == {slug2}
+
+
+def test_unregister_active_site_clears_active(tmp_path):
+    path = tmp_path / "sites.yaml"
+    slug = R.register("https://one.com", "One", "/brains/one", path=path)
+    R.unregister(slug, path=path)
+    assert R.load(path)["active"] is None
+
+
+def test_unregister_non_active_site_leaves_active_unchanged(tmp_path):
+    path = tmp_path / "sites.yaml"
+    slug1 = R.register("https://one.com", "One", "/brains/one", path=path)
+    slug2 = R.register("https://two.com", "Two", "/brains/two", path=path)
+    R.unregister(slug1, path=path)
+    assert R.load(path)["active"] == slug2
+
+
+def test_unregister_unknown_slug_raises_and_leaves_file_unchanged(tmp_path):
+    path = tmp_path / "sites.yaml"
+    R.register("https://one.com", "One", "/brains/one", path=path)
+    before = path.read_text()
+    with pytest.raises(ValueError, match="one-com"):
+        R.unregister("ghost-site", path=path)
+    assert path.read_text() == before
+
+
+def test_unregister_locks_down_file_permissions(tmp_path):
+    path = tmp_path / "sites.yaml"
+    slug = R.register("https://one.com", "One", "/brains/one", path=path)
+    R.register("https://two.com", "Two", "/brains/two", path=path)
+    # Loosen the mode register() set, so this test proves unregister's own
+    # write path restores 600 rather than inheriting it from the existing file.
+    path.chmod(0o644)
+    R.unregister(slug, path=path)
+    mode = path.stat().st_mode & 0o777
+    assert mode == 0o600
+
+
 def test_register_empty_url_raises_and_does_not_write(tmp_path):
     path = tmp_path / "sites.yaml"
     with pytest.raises(ValueError, match="empty site id"):

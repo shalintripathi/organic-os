@@ -73,6 +73,18 @@ def set_active(slug: str, path=DEFAULT) -> None:
     _atomic_write(path, data)
 
 
+def unregister(slug: str, path=DEFAULT) -> None:
+    path = Path(path)
+    data = load(path)
+    if slug not in data["sites"]:
+        known = sorted(data["sites"]) or ["(none registered)"]
+        raise ValueError(f"unknown site {slug!r}; known sites: {', '.join(known)}")
+    del data["sites"][slug]
+    if data["active"] == slug:
+        data["active"] = None
+    _atomic_write(path, data)
+
+
 def get_active(path=DEFAULT) -> dict | None:
     data = load(path)
     slug = data.get("active")
