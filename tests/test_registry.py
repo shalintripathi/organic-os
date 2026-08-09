@@ -103,6 +103,9 @@ def test_unregister_locks_down_file_permissions(tmp_path):
     path = tmp_path / "sites.yaml"
     slug = R.register("https://one.com", "One", "/brains/one", path=path)
     R.register("https://two.com", "Two", "/brains/two", path=path)
+    # Loosen the mode register() set, so this test proves unregister's own
+    # write path restores 600 rather than inheriting it from the existing file.
+    path.chmod(0o644)
     R.unregister(slug, path=path)
     mode = path.stat().st_mode & 0o777
     assert mode == 0o600
