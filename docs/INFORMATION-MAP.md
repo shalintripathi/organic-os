@@ -39,6 +39,7 @@ means a human consults this map when the canonical source changes.
 | Outcome-record fields and the key aliases each accepts (`item`, `url`, `applied_at`, `claimed_before`, `claimed_after`, `claimed_delta`, `windows`; absent parses as None, item falls back to the filename stem) | `FIELDS` + `ALIASES` in `plugin/lib/core/outcomes.py` | `plugin/docs/site-repo-contract.md` outcome-records section; `plugin/skills/hoo-verify-outcome/SKILL.md` step 1 | manual |
 | Verification comparison rule (relative tolerance default 0.05; `pct_diff` a fraction against the larger of the two values; one-sided or non-numeric metrics reported unverifiable, not divergent; nothing compared means `agrees: False`, read as unverified) | `compare` in `plugin/lib/core/outcomes.py` | `plugin/skills/hoo-verify-outcome/SKILL.md` step 4; `plugin/docs/reproducing-results.md`; `docs/adr/0011-memory-integrity.md` | manual |
 | Security-report + Code-of-Conduct enforcement contact (private security advisory on the repo, or the maintainer's GitHub profile @shalintripathi; never a personal email) | `CODE_OF_CONDUCT.md` Enforcement section | `SECURITY.md` "Reporting an issue"; `SUPPORT.md` security-issues section | manual |
+| CI check list (audit, pytest, verify-gates, in that order) | `.github/workflows/ci.yml` | `CONTRIBUTING.md` Dev setup section; `.github/PULL_REQUEST_TEMPLATE.md` checklist; `THREAT-MODEL.md` release-integrity section | manual |
 
 Check 8 also verifies that every relative markdown link in the repo
 resolves to an existing file, so cross-references never silently rot when
