@@ -43,7 +43,17 @@ def load(path=DEFAULT) -> dict:
 def _atomic_write(path: Path, data: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(path.suffix + ".tmp")
-    tmp.write_text(yaml.safe_dump(data, sort_keys=False))
+    # The registry names every site and brain path; the bytes must be 0600
+    # for their whole life, including inside the tmp file. O_CREAT's mode
+    # does not apply to a stale tmp left by a crash, so force it with fchmod.
+    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    try:
+        os.fchmod(fd, 0o600)
+    except Exception:
+        os.close(fd)
+        raise
+    with os.fdopen(fd, "w") as fh:
+        fh.write(yaml.safe_dump(data, sort_keys=False))
     os.replace(tmp, path)
     os.chmod(path, 0o600)
 

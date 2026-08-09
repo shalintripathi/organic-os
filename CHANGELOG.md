@@ -1,36 +1,43 @@
 # Changelog
 
-## [Unreleased]
+## [0.6.1] - 2026-08-10
 
 ### Added
-- **core:** `approval.notify_pending(root, send, kinds, limit)` sends every
-  un-notified proposed item exactly once and marks each as it goes. The
-  check-send-mark sequence used to be prose in six skills, and prose gets
-  skipped: items stayed marked un-notified over a working channel, so nothing
-  ever reached the approver. An item is marked only after `send` returns
-  without raising, so a failed send is retried on the next run instead of
-  being silently lost, and one bad item does not stop the batch.
+- **core:** `registry.unregister(slug)` removes a site from the registry the
+  same way everything else writes to it - unknown-slug guard before any
+  write, active pointer cleared when the removed site held it, atomic write.
+  `/organic-os:reset` used to instruct a hand edit of `sites.yaml`,
+  re-implementing the atomic-write + chmod pattern in prose; it now calls
+  the one writer `lib/core` is supposed to be. Contributed by @waterlemonnn
+  (#24, closes #1).
 
 ### Changed
-- **skills:** the six skills that notify approvers (`hoo-daily`, `hoo-weekly`,
-  `hoo-orchestrator`, `onsite-propose`, `hoo-import-audit`,
-  `hoo-monthly-audit`) now call `core.approval.notify_pending` instead of
-  describing the check-send-mark sequence in prose. Each keeps its own
-  channel-selection logic; only the notify step changed.
-- **docs:** `site-repo-contract.md` states that `approvals/queue.md` is
-  derived and refreshed on every status change, so a queue that disagrees
-  with the item files is a bug to report, not a state to work around.
+- **core:** `telegram.sanitize_bot_token` rejects anything outside printable
+  ASCII, not just the control-character window. A zero-width space, BOM, or
+  accented letter in a mispasted token now fails fast at the guard with the
+  reason named, instead of deeper in the HTTP stack. The error message stays
+  a constant, so the token can never appear in it. Contributed by
+  @waterlemonnn (#23, closes #20).
+- **docs:** CONTRIBUTING and the PR template name all three CI checks.
+  `verify-gates.sh` ran in CI but was missing from the documented pre-PR
+  steps, so a contributor following the docs exactly could be green locally
+  and still fail CI. Contributed by @waterlemonnn (#22, closes #4).
 
 ### Fixed
-- **core:** `set_status` now refreshes `approvals/queue.md` itself, so the
-  derived queue can no longer go stale. Only the CLI rebuilt it before, so a
-  skill calling `set_status` directly (publish, apply) left the queue frozen:
-  it kept listing items as pending for days after they were approved and
-  published, and an operator reading it concluded the loop had stopped. The
-  refresh runs after the item is durably written and is best-effort - any
-  failure inside it is swallowed, because a derived file must never roll back
-  or block a real state transition. `reset_to_proposed` refreshes the same
-  way.
+- **core:** the registry's atomic write created its tmp file at default-umask
+  permissions and only chmod'd the final file, so site names and brain paths
+  briefly sat world-readable in `sites.yaml.tmp`. The tmp file is now 0600
+  for its whole life, including when a crash leaves a stale tmp behind at
+  laxer permissions. Found during the adversarial review of #24, whose
+  permissions test also turned out to pass without exercising unregister's
+  write path - it now fails against a plain-write mutant and passes against
+  the real code.
+- **skills:** reset's step list claimed only the registry removal is
+  performed by the skill, while the env-file deletion two items down is also
+  performed by it. The intro now names both.
+- **docs:** this changelog carried a stale `[Unreleased]` section duplicating
+  0.5.4 and two `[0.6.0]` sections from the same release night. One record
+  each now.
 
 ## [0.6.0] - 2026-07-30
 
@@ -75,29 +82,6 @@
   query the site was not visible for before always sends the day it appears -
   that is the real progress signal at this stage.
 
-## [0.6.0] - 2026-07-30
-
-### Added
-- The daily and weekly routines now classify a site's stage from its own data
-  and speak to it. Every detector this project ships assumes an established
-  site: striking distance wants positions 4 to 15, decay wants 50 clicks in the
-  older window, anomaly alerts skip a metric whose median is under 10. A new
-  site clears none of those bars, so the loop reported "quiet day, nothing sent"
-  while sitting on real data - indexed pages, live queries, climbing positions.
-  Twelve days of that reads as a broken product, and every site starts there.
-- On an early-stage site the routines now report which queries the site is
-  visible for, the closest-to-breakthrough opportunities banded by position
-  (top, page-two, visible, distant) with the lever that plausibly moves each,
-  and an explicit line that zero clicks at those positions is expected rather
-  than a fault. The dormant detectors are named along with the threshold that
-  will wake each one, so silence is explained instead of mysterious.
-- Early-stage sites get the channel summary weekly rather than daily, since a
-  daily "still climbing" is noise, but always get an alert the moment a query
-  appears that the site was not visible for before. On a new site that is the
-  real progress signal.
-- Growing and established sites are unaffected: all detectors behave exactly as
-  before.
-
 ## [0.5.5] - 2026-07-30
 
 ### Fixed
@@ -110,6 +94,16 @@
   reported as malformed instead of raising.
 
 ## [0.5.4] - 2026-07-30
+
+### Changed
+- **skills:** the six skills that notify approvers (`hoo-daily`, `hoo-weekly`,
+  `hoo-orchestrator`, `onsite-propose`, `hoo-import-audit`,
+  `hoo-monthly-audit`) now call `core.approval.notify_pending` instead of
+  describing the check-send-mark sequence in prose. Each keeps its own
+  channel-selection logic; only the notify step changed.
+- **docs:** `site-repo-contract.md` states that `approvals/queue.md` is
+  derived and refreshed on every status change, so a queue that disagrees
+  with the item files is a bug to report, not a state to work around.
 
 ### Fixed
 - The approvals queue could go stale and report work as pending long after it

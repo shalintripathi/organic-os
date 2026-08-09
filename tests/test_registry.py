@@ -220,3 +220,43 @@ def test_path_warnings_both_conditions_returns_two_warnings():
         "~/Documents/.claude/plugins/organic-os/brain", "local"
     )
     assert len(warnings) == 2
+
+
+# -- _atomic_write tmp-file permissions --------------------------------
+# Review finding (PR #24 review, pre-existing): the tmp file was written
+# with default-umask perms and only the final file was chmod'd, so registry
+# contents briefly sat at (typically) 644 in sites.yaml.tmp. The tmp must
+# be 600 for its whole life.
+
+def test_atomic_write_tmp_file_is_0600_before_replace(tmp_path, monkeypatch):
+    path = tmp_path / "sites.yaml"
+    seen = {}
+    real_replace = R.os.replace
+
+    def spy(src, dst):
+        seen["tmp_mode"] = Path(src).stat().st_mode & 0o777
+        return real_replace(src, dst)
+
+    monkeypatch.setattr(R.os, "replace", spy)
+    R.register("https://one.com", "One", "/brains/one", path=path)
+    assert seen["tmp_mode"] == 0o600
+
+
+def test_atomic_write_stale_lax_tmp_is_forced_to_0600(tmp_path, monkeypatch):
+    # A crash can leave a stale .tmp behind at old perms; O_CREAT's mode
+    # argument does not apply to an existing file, so the write path must
+    # force the mode itself.
+    path = tmp_path / "sites.yaml"
+    stale = tmp_path / "sites.yaml.tmp"
+    stale.write_text("stale: true\n")
+    stale.chmod(0o644)
+    seen = {}
+    real_replace = R.os.replace
+
+    def spy(src, dst):
+        seen["tmp_mode"] = Path(src).stat().st_mode & 0o777
+        return real_replace(src, dst)
+
+    monkeypatch.setattr(R.os, "replace", spy)
+    R.register("https://one.com", "One", "/brains/one", path=path)
+    assert seen["tmp_mode"] == 0o600

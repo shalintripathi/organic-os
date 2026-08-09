@@ -27,8 +27,9 @@ AskUserQuestion: which registered site (or "all"). Confirm before any write.
 
 ## Step 3: walk through each piece, per site
 
-Only item 2 below is something this skill performs, and only with explicit
-confirmation. Everything else is the user's own action - state why for each.
+Only items 2 and 6 below are things this skill performs, each only with
+explicit confirmation. Everything else is the user's own action - state why
+for each.
 
 1. **Scheduled routines**: point at the runtime's own mechanism. If runtime
    mode is `claude-scheduled`, tell the user to remove the scheduled task from
