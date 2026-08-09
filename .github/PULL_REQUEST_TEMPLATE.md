@@ -6,6 +6,7 @@
 
 - [ ] `python3 -m pytest tests/ -q` passes
 - [ ] `./scripts/audit.sh` is clean
+- [ ] `./scripts/verify-gates.sh` is clean
 - [ ] No business data added (no `site-profile.yaml`, keyword lists, brand
       rulebooks, competitor lists, or skillbook content - see
       [CONTRIBUTING.md's data boundary](../CONTRIBUTING.md#the-data-boundary-hard-rule))

@@ -562,19 +562,31 @@ def test_sanitize_bot_token_strips_and_rejects_controls():
     ("\x7f", "DEL"),
     ("\x80", "C1"),
     ("\x9f", "C1"),
+    ("​", "zero-width space"),
+    ("﻿", "BOM"),
+    ("⁠", "word joiner"),
+    (" ", "non-breaking space"),
+    ("é", "accented letter"),
 ])
-def test_sanitize_bot_token_rejects_del_and_c1_controls(bad_char, kind):
-    """http.client rejects DEL (0x7f) and C1 (0x80-0x9f); the sanitizer must
-    reject them too so the token never reaches the stack that would echo it."""
-    token = "SECRET-TOKEN-123" + bad_char
+def test_sanitize_bot_token_rejects_non_printable_ascii(bad_char, kind):
+    """A real token is digits, a colon, and [A-Za-z0-9_-]. The sanitizer
+    must reject anything outside printable ASCII, not just DEL and the C1
+    range, so the token never reaches the stack that would echo it."""
+    # In the interior, not trailing: str.strip() treats some of these (the
+    # non-breaking space) as whitespace and would silently drop a trailing one.
+    token = "SECRET-TOKEN" + bad_char + "123"
     try:
         T.sanitize_bot_token(token)
     except RuntimeError as e:
-        assert "SECRET" not in str(e), f"{kind} char: token leaked in error"
-        assert token not in str(e), f"{kind} char: full token leaked in error"
-        assert "control" in str(e).lower(), f"{kind} char: reason not named"
+        assert "SECRET" not in str(e), f"{kind}: token leaked in error"
+        assert token not in str(e), f"{kind}: full token leaked in error"
     else:
-        raise AssertionError(f"expected RuntimeError for {kind} control char")
+        raise AssertionError(f"expected RuntimeError for {kind}")
+
+
+def test_sanitize_bot_token_accepts_legitimate_token():
+    token = "123456789:ABC-DEF1234ghIkl-zyx57W2v1u123ew11"
+    assert T.sanitize_bot_token(token) == token
 
 
 def test_send_document_empty_caption_omitted(tmp_path):

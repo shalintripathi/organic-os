@@ -68,10 +68,15 @@ cd organic-os
 python3 -m pip install --user pyyaml pytest
 python3 -m pytest tests/ -q
 ./scripts/audit.sh
+./scripts/verify-gates.sh
 ```
 
-Both commands should be clean before you start (every test passing,
-`audit: clean`) and clean again before you open a PR.
+All three should be clean before you start (every test passing, `audit:
+clean`, `verify-gates: all 8 probes behaved as designed`) and clean again
+before you open a PR. `verify-gates.sh` is not redundant with pytest: it
+builds a throwaway brain repo in a temp directory and runs eight probes
+against the approval gates, checking that they refuse what they should
+refuse and open for a genuine approval.
 
 ## Contributing a CMS adapter
 
