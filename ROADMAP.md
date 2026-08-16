@@ -320,6 +320,33 @@ to fool, including harder for the loop to fool itself.
   hand in Search Console so the claim survives without the tool. See
   CHANGELOG.md.
 
+## v0.7 - The loop reads richer data (OpenSEO tier)
+
+Decision recorded in [ADR-0012](docs/adr/0012-openseo-optional-data-tier.md):
+[OpenSEO](https://github.com/every-app/open-seo) (MIT, DataForSEO-backed,
+MCP-exposed) becomes an optional probed data tier. The user runs it with
+their own DataForSEO key; organic-os holds no new credential and requires
+nothing. Scope, all additive, gates untouched:
+
+- **Connector probe.** Detect the OpenSEO MCP in-session the way GA4/GSC
+  MCPs are detected today; report reachable/absent in `/organic-os:diagnose`.
+- **`hoo-keyword-intel`: a tier that does not need Google Ads.** Volume,
+  difficulty, and SERP data when the probe succeeds; the existing
+  `none | basic | explorer` behavior unchanged when it does not.
+- **Rank tracking with a real source.** The weekly reads true positions for
+  `keywords/tracking.yaml` entries, independent of GSC's own-site lagged
+  view - the feature that today silently never runs on most instances.
+- **`hoo-competitor-intel`: licensed competitor data.** Keyword coverage and
+  backlink profiles without touching the ADR-0006 no-scraping line.
+- **`hoo-citation-tracker`: their AI Visibility workflow as a source.**
+- **Tasks carried from the same study:** a deliberately broken fixture site
+  for onsite-audit tests (their `badseo` pattern); investigate cross-listing
+  skills on the `npx skills` registry for reach beyond the plugin
+  marketplace.
+
+Not adopted - their web-app architecture, bundling DataForSEO directly, any
+UI - with reasons in the ADR, so the discussion is not re-litigated.
+
 ## v1.0 - Many sites, many hands
 
 - **Multi-site orchestration across brain repos.** The sites registry
