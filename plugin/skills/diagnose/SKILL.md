@@ -46,7 +46,14 @@ is stated, never guessed.
    the probe ran in (`local-cli`, `cowork-cloud`, `ci`), and the date it was
    checked. The context is the load-bearing part - a connector verified from
    an interactive session is not a claim about the runtime that runs the
-   routines.
+   routines. Plus one row in the same format for the search-data adapter,
+   read from this session's own tool list rather than the profile: name
+   (`search-data adapter (openseo)` - the known adapter), status `present`
+   or `absent` in this session, context `this-session`, today's date, and -
+   when present - which of the known tools were seen (the known surface is
+   listed in `plugin/docs/connectors.md`, OpenSEO section; report the tools
+   actually seen, never the list). Looking at the session's tool list is
+   not a re-probe: nothing is called and nothing transmitted.
 7. **Setup scorecard** - the newest `runs/*-setup-scorecard/REPORT.md` in the
    brain, if one exists: its date and the per-check status column. Say "no
    scorecard recorded" when there is none.

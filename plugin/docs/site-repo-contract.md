@@ -45,12 +45,28 @@ exists, so re-running setup on an existing brain repo is safe.
 `1`) and does not appear in the scaffold: the weekly routine's Keyword
 portfolio section (skills/hoo-weekly) creates it on its first run with a
 verified GSC connector and a non-empty tracked set. Tab-separated,
-header `date	keyword	position	clicks	impressions`, one appended row per
-tracked keyword per weekly run - append-only, rows never edited or
-removed, the same discipline as `signals/`. The position is GSC average
-position for queries matching the tracked term, never a scraped SERP
-rank; a keyword with zero impressions in the window gets an EMPTY
-position field - unknown is recorded as absent, never guessed.
+header `date	keyword	position	clicks	impressions	serp_position	serp_source`,
+one appended row per tracked keyword per weekly run - append-only, rows
+never edited or removed, the same discipline as `signals/`. The position
+is GSC average position for queries matching the tracked term, never a
+scraped SERP rank; a keyword with zero impressions in the window gets an
+EMPTY position field - unknown is recorded as absent, never guessed.
+
+The last two columns are the v0.7 extension, additive like everything
+else here: `serp_position` is a true SERP position read in that run
+through a rank-capable search-data adapter (the capability slot from
+ADR-0009; licensed data the user pays their own adapter for, never
+scraping), and `serp_source` names the adapter that read it. Both are
+EMPTY on any row where no adapter read ran. The new columns sit at the
+end, so pre-v0.7 five-column rows still parse, and a pre-v0.7 file keeps
+its five-column header forever - append-only covers the header row too.
+Readers treat missing trailing fields as empty, never as an error.
+
+`keywords/tracking.yaml` is written only through `core.keywords`
+(`load_tracked` / `save_tracked` / `add_tracked`) - entries are
+`{term, added, source}`, hand-written plain strings are tolerated on
+read and normalized, and additions remain a gated strategy mutation
+that runs the writer after approval.
 
 `drift/` is additive and does not appear in that scaffold: `schema_version`
 stays `1`, and the directory only comes into existence the first time

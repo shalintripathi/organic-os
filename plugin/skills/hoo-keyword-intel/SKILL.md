@@ -15,6 +15,15 @@ Run: `PYTHONPATH="$CLAUDE_PLUGIN_ROOT/lib" python3 -c "..."` snippet importing
 real_client() and `tier.detect()` -> basic|explorer. Tell the user which tier
 is active and what that enables.
 
+In the same pass, check whether a search-data adapter's tools are present
+in this session (the search-data capability slot, ADR-0009 in the repo;
+the known adapter is OpenSEO - tool surface listed in
+`$CLAUDE_PLUGIN_ROOT/docs/connectors.md`, OpenSEO section; verify against
+the tools actually present, never pin the list). Present: the search-data
+adapter section below applies on top of whatever tier is active. Absent:
+every tier behaves exactly as it does today, and nothing is fabricated in
+its place.
+
 ## basic (or standard)
 1. Ideas: `keyword_ideas.run` with profile target keywords as seeds AND, per
    competitor, `site_seed=<competitor domain>`. Cache dir: `<brain>/keywords/cache/`.
@@ -39,9 +48,40 @@ offer CSV import.
 Accept a Keyword Planner UI export: `csv_import.load_planner_csv(path)`.
 Auction Insights CSVs: summarize overlap/position trends per competitor.
 
-Tracked-keyword management: add keywords to track by editing
-`keywords/tracking.yaml` or asking in-session; the weekly run records
-their GSC history (skills/hoo-weekly, Keyword portfolio section).
+## search-data adapter (works with every tier above)
+
+Runs only when tier detection found the adapter's tools in this session;
+absent means this whole section does not exist for the run.
+
+1. Hydrate the idea shortlist with volume, difficulty, and CPC via
+   `get_keyword_metrics`. On tier "none" this is the headline value:
+   keyword volume without a Google Ads token. On basic/explorer it
+   enriches the Planner pull rather than replacing it.
+2. Competitor gap without a Planner: `get_ranked_keywords` and
+   `get_domain_keyword_suggestions` per competitor domain, diffed against
+   our own coverage the same way the basic tier's gap step diffs
+   site_seed pulls.
+3. SERP snapshot for the top opportunities via `get_serp_results`: who
+   holds the positions, which SERP features sit above them.
+
+Every output line that carries adapter data names the adapter as its
+source (evidence line style: `volume/difficulty per <adapter>`), the same
+rule every capability slot follows.
+
+Tracked-keyword management: never edit `keywords/tracking.yaml` by hand.
+Additions are a strategy mutation - create_item kind="strategy" +
+approval gate, unchanged - and once approved they land through the one
+writer: `PYTHONPATH="$CLAUDE_PLUGIN_ROOT/lib" python3 -c "..."` importing
+`core.keywords` and calling `add_tracked(<brain>, [terms],
+source="hoo-keyword-intel")`. It returns added and skipped lists;
+already-tracked terms (case-insensitive) are skipped, so re-running an
+approved addition is safe. Read the set with `core.keywords.load_tracked`.
+The weekly run records tracked keywords' history (skills/hoo-weekly,
+Keyword portfolio section).
+
+If `tracking.yaml` is empty and the profile has seed keywords
+(keywords.targets), offer to seed the tracked set from them - through the
+same gated path above, never directly.
 
 Output in every tier: REPORT.md with the top 20 opportunities, each carrying
 volume (or proxy), difficulty proxy, intent guess, recommended action

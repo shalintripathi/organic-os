@@ -412,7 +412,8 @@ it could not answer.
    rulebook - the structured keys are the enforceable floor, the prose
    is the voice.
 3. **Connectors**: run the **Connector wizard** below for GA4 and GSC (the
-   heartbeat pair) first, then Notion, Slack, Canva as optional extras.
+   heartbeat pair) first, then Notion, Slack, Canva, OpenSEO as optional
+   extras.
    This replaces a plain available/absent question - every connector this
    interview records has been probed, and every `verified` status has
    passed one live query, not just "the tool appeared to be there."
@@ -475,20 +476,22 @@ The AI-visibility baseline offer (below) and the Postflight scorecard
 rework beyond running after a proposal instead of after a plain question
 list.
 
-## Connector wizard (GA4, GSC, then Notion/Slack/Canva)
+## Connector wizard (GA4, GSC, then Notion/Slack/Canva/OpenSEO)
 
 Replaces a passive "is this available" question with a probe-then-verify
 flow. Run this for GA4 and GSC first - call them the heartbeat pair,
 because they are the primary data source the rest of the plugin depends on
-- then, only if the user wants to continue, for Notion, Slack, and Canva.
+- then, only if the user wants to continue, for Notion, Slack, Canva, and
+OpenSEO (the search-data adapter - user-run, their own DataForSEO key;
+connect command and tool surface in `plugin/docs/connectors.md`).
 
 For each connector, in this order:
 
 1. **Probe** reachability in the current context: try listing the
-   connector's tools (GA4/GSC/Notion/Slack/Canva - whatever surface this
-   session actually exposes). Note which context this probe ran in
-   (`local-cli`, `cowork-cloud`, `ci`) - it is passed to `record_connector`
-   either way.
+   connector's tools (GA4/GSC/Notion/Slack/Canva/OpenSEO - whatever
+   surface this session actually exposes). Note which context this probe
+   ran in (`local-cli`, `cowork-cloud`, `ci`) - it is passed to
+   `record_connector` either way.
 2. **If reachable, run exactly one live verification query before
    recording anything as verified:**
    - GSC: list sites.
@@ -496,6 +499,7 @@ For each connector, in this order:
    - Notion: search or list one workspace/database.
    - Slack: list channels.
    - Canva: list designs or brand kits.
+   - OpenSEO: `whoami` (record the connector as `openseo`).
    A live call, not just tool presence, is what earns `verified` - a
    connector can appear installed but be unauthorized or pointed at the
    wrong property, and only a real call catches that. Only after the live
@@ -515,10 +519,10 @@ For each connector, in this order:
      name, "declined", context)`, plus one honest line about what
      degrades, pulled from the matching row of `plugin/docs/
      connectors.md`'s capability table. Marked "(Recommended)" for the
-     optional three (Notion, Slack, Canva) - they are extras, and
-     skipping keeps setup short.
+     optional extras (Notion, Slack, Canva, OpenSEO) - they are extras,
+     and skipping keeps setup short.
 
-**GSC/GA4 get a stronger framing than the optional three.** Before offering
+**GSC/GA4 get a stronger framing than the optional extras.** Before offering
 to skip either one, say plainly: "organic-os without GSC/GA4 still runs,
 but `hoo-daily` will log no-data signals with nothing to act on until one
 of these connects. Of everything in this interview, this is the single

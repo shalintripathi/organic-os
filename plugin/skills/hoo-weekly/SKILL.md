@@ -60,33 +60,61 @@ wrapper, never by this skill); the Monday report is what surfaces it.
 ## Keyword portfolio
 
 Runs when the GSC connector is reachable AND keywords/tracking.yaml has
-entries. Either one missing: skip and note it as one line in REPORT.md
+entries (read it with `core.keywords.load_tracked` - never parse the YAML
+directly). Either one missing: skip and note it as one line in REPORT.md
 ("keyword portfolio: skipped, no GSC connector" / "keyword portfolio:
 skipped, no tracked keywords") instead of guessing.
 
 1. For each tracked keyword, pull the last-28-day GSC average position,
    clicks, and impressions for queries matching the tracked term.
+1.5. True SERP position, when a rank-capable search-data adapter's tools
+   are present in this session (the search-data slot, ADR-0009 in the
+   repo; the known adapter is OpenSEO - tool surface in
+   `$CLAUDE_PLUGIN_ROOT/docs/connectors.md`, verify against the tools
+   actually present, never pin): read each tracked keyword's live
+   position via `get_serp_results`, or via the user's configured rank
+   tracker (`get_rank_tracker`) when one exists for this site. This is a
+   different measurement from step 1, and the reason it exists: GSC only
+   sees queries where the site actually surfaced; the adapter sees where
+   it did not - on an early site that difference is the whole point.
+   Record it alongside the GSC average, never instead of it, and name
+   the adapter as the source on every line that carries its data.
+   Adapter absent: skip this step, leave the rest of the section exactly
+   as it is, and add one honest line to REPORT.md: "rank read: GSC
+   average only - no independent rank source in this session."
 2. Append one history line per keyword to `keywords/history.tsv`
    (create it with its header row if absent): date, keyword, position,
-   clicks, impressions - tab-separated, append-only, never edited (see
-   docs/site-repo-contract.md). A keyword with zero impressions has an
-   unknown position: record the row with clicks and impressions 0 and
-   the position field EMPTY - absent, never guessed.
+   clicks, impressions, serp_position, serp_source - tab-separated,
+   append-only, never edited (format canonical in
+   docs/site-repo-contract.md). The last two columns are the additive
+   v0.7 extension carrying step 1.5's read: serp_position is the
+   adapter's position, serp_source names the adapter; both EMPTY when no
+   adapter read ran. New columns sit at the end, so old five-column
+   lines still parse, and an existing file's five-column header is never
+   rewritten (append-only covers the header too) - readers treat missing
+   trailing fields as empty. A keyword with zero impressions has an
+   unknown GSC position: record the row with clicks and impressions 0
+   and the position field EMPTY - absent, never guessed. Same rule for
+   serp_position when the adapter did not return the keyword.
 3. Report movement vs the previous recorded week in REPORT.md: for each
    keyword with a prior history line, one line - position now, position
-   then, the delta, and the clicks/impressions direction. First-ever
-   run: state that history starts today; there is no movement to report.
+   then, the delta, and the clicks/impressions direction. When both
+   weeks carry a serp_position, add its delta to the same line, named as
+   the adapter's read. First-ever run: state that history starts today;
+   there is no movement to report.
 4. The biggest mover (either direction, by absolute position change)
    gets one line in the Monday report's What moved section - the Monday
    report reads it from the history file and this run's REPORT.md (see
    skills/hoo-monday-report).
 
 THE HONESTY RULE, stated here and repeated in every output that quotes
-these numbers: this is GSC average position for queries matching the
-tracked term - real user impressions, not a scraped SERP snapshot
-(docs/adr/0006 in the repo: no scraping; GSC is the licensed data).
-Positions for keywords with zero impressions are unknown, recorded as
-absent, never guessed.
+these numbers: the position column is GSC average position for queries
+matching the tracked term - real user impressions, not a scraped SERP
+snapshot. The serp_position column, when filled, is a licensed SERP read
+the user paid their own search-data adapter for, named in serp_source -
+licensed data, not scraping, so docs/adr/0006 in the repo is untouched
+either way. Positions unknown to a source are recorded as absent, never
+guessed, and neither column ever stands in for the other.
 
 ## Attribution, for every detector below
 

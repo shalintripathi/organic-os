@@ -11,9 +11,13 @@ description: Use to measure AI answer-engine visibility - "are we cited by ChatG
 2. For each query (cap 20 per run; rotate through the set across runs),
    ask each engine in the engine set that is actually reachable from this
    session. Sources in order of preference: an authorized AI-search
-   connector or WebSearch with engine-targeted queries; plain WebSearch
-   otherwise. Never scrape engines through automation that violates their
-   ToS.
+   connector; the search-data adapter's AI-visibility read, when its
+   tools are present in this session (the search-data slot, ADR-0009 in
+   the repo; the known adapter is OpenSEO - see
+   `$CLAUDE_PLUGIN_ROOT/docs/connectors.md` - licensed data, and every
+   line carrying it names the adapter as its source); WebSearch with
+   engine-targeted queries; plain WebSearch otherwise. Never scrape
+   engines through automation that violates their ToS.
 3. Record per query: engine | our domain mentioned? | cited (linked)? |
    position (only when cited - the ordinal below) | sentiment (only when
    mentioned - the label plus its evidence quote, below) | competitors
