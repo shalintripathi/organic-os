@@ -12,6 +12,9 @@ itself. It uses whatever you have already connected:
   as local env vars (see `plugin/docs/credentials/google-ads-token.md`).
 - **WordPress** - an Application Password for a dedicated Editor user,
   stored in a local env file (see `plugin/docs/credentials/wordpress.md`).
+- **OpenSEO** - the optional search-data adapter: an MCP server you run
+  (or subscribe to) yourself, paying DataForSEO directly with your own
+  key. See the OpenSEO section below.
 
 organic-os is a plugin - skills, agents, and scripts - not a running
 process, so it has no server-side identity to authenticate anything on its
@@ -28,7 +31,7 @@ other credential.
 
 Nothing in organic-os pops an OAuth window. `/organic-os:start` and
 `/organic-os:setup` **probe** what is reachable - they try listing GA4/GSC
-tools, ask about Notion/Slack/Canva - and print a per-connector status with
+tools, ask about Notion/Slack/Canva/OpenSEO - and print a per-connector status with
 the exact instructions for connecting on your surface:
 
 - **claude.ai / Cowork:** Settings, then Connectors.
@@ -62,7 +65,55 @@ is the only approach that works identically on both surfaces.
 | Approval notifications outside a live session | Slack connector, or Telegram/email per `plugin/docs/approval-channels.md` | claude.ai Settings -> Connectors (Slack); channel-specific setup for Telegram/email | in-session approval works immediately with zero setup; you just have to be in the session when a proposal lands |
 | Asset/creative generation | Canva connector | claude.ai Settings -> Connectors, or `/mcp` / `claude mcp add` in Claude Code | Content briefs and drafts still produce text; no generated creative assets |
 | Publishing approved fixes/drafts to a live site | WordPress Application Password (env file) | `plugin/docs/credentials/wordpress.md` | Everything up to `approved` still works - proposals queue and get approved, they just are not applied until WordPress is connected |
+| Keyword volume/difficulty, true rank tracking, competitor keyword + backlink coverage, an AI-visibility source | OpenSEO MCP server (yours - self-hosted or hosted, your own DataForSEO key) | OpenSEO section below (`claude mcp add`, or your own instance) | `hoo-keyword-intel`, the weekly's rank read, `hoo-competitor-intel`, and `hoo-citation-tracker` behave exactly as before; the weekly says plainly that no independent rank source was present |
 | Instant URL submission on ship (Bing, Yandex, other IndexNow engines) | `indexnow: {enabled, key}` in site-profile.yaml + `<key>.txt` at the site root | `/organic-os:setup` connector wizard (generate key, place file, verify by fetch) | Apply and publish work unchanged; changed URLs just wait to be crawled naturally |
+
+## OpenSEO (the search-data adapter, optional)
+
+[OpenSEO](https://github.com/every-app/open-seo) (MIT) is an open-source
+SEO data tool - keyword research, rank tracking, competitor insights,
+backlinks, AI visibility - whose data comes from DataForSEO under your
+own API key. It exposes an MCP server, which makes it a second adapter in
+the search-data capability slot (ADR-0009): skills reference the slot,
+the probe finds what fills it, and no gate or contract logic names the
+vendor. The decision and its boundaries are
+[ADR-0012](../../docs/adr/0012-openseo-optional-data-tier.md).
+
+What organic-os does and does not hold: you run OpenSEO yourself
+(self-hosted from their repo, or their hosted tier) and you pay
+DataForSEO directly - the costs are your own DataForSEO spend, metered by
+them, not by anything here. organic-os stores no OpenSEO or DataForSEO
+credential, adds no env vars, and makes no DataForSEO call of its own.
+Without the adapter, every skill behaves exactly as it does today and
+says so; with it, four touchpoints read richer data and name the adapter
+as the source on every line that carries it.
+
+Connect (hosted endpoint):
+
+```
+claude mcp add --transport http --scope user openseo https://app.openseo.so/mcp
+```
+
+First use runs their OAuth flow in the browser. For headless setups the
+server accepts an API key from your OpenSEO account instead, sent as an
+`Authorization: Bearer <key>` header (their keys start with `oseo_`) or
+as an `x-api-key: <key>` header - configure it on the MCP entry, and
+never store it anywhere organic-os reads. Self-hosting works the same
+way against your own instance's `/mcp` endpoint.
+
+Known tool surface as of 2026-09 (the tool prefix depends on the server
+name you chose - typically `mcp__openseo__*`): `get_keyword_metrics`,
+`get_serp_results`, `get_ranked_keywords`, `get_domain_overview`,
+`get_domain_keyword_suggestions`, `get_backlinks_overview`,
+`get_backlinks_profile`, `find_serp_competitors`, `get_rank_tracker`,
+`create_rank_tracker`, `add_rank_tracking_keywords`,
+`estimate_rank_tracker_cost`, `list_saved_keywords`, `list_projects`,
+`get_project_context`, `whoami`.
+
+Verify against the tools actually present in your session - re-verify,
+do not pin. The surface changing shape is a named revisit trigger in
+ADR-0012, and every skill acts on what the probe finds, never on this
+list.
 
 ## IndexNow and Bing Webmaster
 

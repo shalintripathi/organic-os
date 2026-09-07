@@ -1,5 +1,59 @@
 # Changelog
 
+## [0.7.0] - 2026-09-08
+
+### Added
+- **The search-data slot gets a second adapter, and three honest gaps
+  close when the user brings one (ADR-0012).** Keyword volume, difficulty,
+  and SERP data had no source at any tier without a Google Ads token. Rank
+  tracking silently never ran: GSC only reports queries where the site
+  already surfaced, so `keywords/tracking.yaml` shipped empty and stayed
+  empty. Competitor keyword coverage and backlinks were out of reach on
+  principle (ADR-0006, no scraping). OpenSEO - open source, MCP-exposed,
+  DataForSEO-backed under the user's own key - now fills the existing
+  search-data capability slot (ADR-0009) as an optional probed adapter.
+  The probe is tool presence in-session; absent means every skill behaves
+  exactly as before and says so plainly, nothing requires the adapter, and
+  nothing is fabricated in its place. organic-os stores no OpenSEO or
+  DataForSEO credential and adds no env vars; the data is licensed by the
+  user directly, so ADR-0006 is untouched.
+- **core:** `keywords.py` - the single writer for
+  `keywords/tracking.yaml`, replacing "edit the YAML by hand" prose the
+  same way `registry.unregister` replaced hand-edited teardown (#24).
+  `load_tracked` normalizes the scaffold's empty file, a missing file, and
+  hand-written plain strings, and turns junk YAML into a ValueError naming
+  the file instead of a raw parse trace; `save_tracked` writes atomically
+  with case-insensitive dedupe keeping the earliest entry; `add_tracked`
+  is idempotent and reports added vs skipped. Additions remain a gated
+  strategy mutation - the writer runs after approval, never around it.
+- **skills:** the four ADR-0012 touchpoints. `hoo-keyword-intel` hydrates
+  idea shortlists with volume/difficulty/CPC, pulls competitor gaps, and
+  snapshots SERPs on top of every tier - on tier "none" that is the
+  headline: keyword volume without a Google Ads token. The weekly's
+  Keyword portfolio reads true SERP position per tracked keyword alongside
+  the GSC average (GSC sees only where the site surfaced; the adapter sees
+  where it did not, which is the whole point on an early site) and extends
+  `keywords/history.tsv` additively - `serp_position` and `serp_source` at
+  the end, old five-column lines still parse. `hoo-competitor-intel` adds
+  ranking keywords, backlink overviews, and SERP competitors.
+  `hoo-citation-tracker` slots the adapter's AI-visibility read into its
+  source-preference list. Every line carrying adapter data names the
+  adapter as its source; no gate or contract logic names any vendor.
+- **skills:** `diagnose` gains one connectors row for the adapter -
+  present/absent in the session and which known tools were actually seen -
+  and `setup`'s connector wizard carries OpenSEO as one quiet optional
+  entry, verified by a live `whoami` and recorded like every other
+  connector.
+- **docs:** `plugin/docs/connectors.md` documents the connect command, the
+  headless auth header shapes, the self-host option, the user-borne
+  DataForSEO cost, and the known tool surface as of 2026-09 under
+  ADR-0012's rule: re-verify against the session, never pin the list.
+
+### Carried
+- The `badseo`-style deliberately broken fixture site for onsite-audit
+  tests and the `npx skills` cross-listing investigation stay open -
+  tracked as issues, not shipped in this phase.
+
 ## [0.6.1] - 2026-08-10
 
 ### Added

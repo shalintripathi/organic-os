@@ -320,29 +320,36 @@ to fool, including harder for the loop to fool itself.
   hand in Search Console so the claim survives without the tool. See
   CHANGELOG.md.
 
-## v0.7 - The loop reads richer data (OpenSEO tier)
+## v0.7 - The loop reads richer data (OpenSEO tier) - COMPLETE
 
 Decision recorded in [ADR-0012](docs/adr/0012-openseo-optional-data-tier.md):
 [OpenSEO](https://github.com/every-app/open-seo) (MIT, DataForSEO-backed,
-MCP-exposed) becomes an optional probed data tier. The user runs it with
-their own DataForSEO key; organic-os holds no new credential and requires
-nothing. Scope, all additive, gates untouched:
+MCP-exposed) became an optional probed data tier - a second adapter in the
+existing search-data capability slot (ADR-0009), never a new slot. The user
+runs it with their own DataForSEO key; organic-os holds no new credential
+and requires nothing. All additive, gates untouched:
 
-- **Connector probe.** Detect the OpenSEO MCP in-session the way GA4/GSC
-  MCPs are detected today; report reachable/absent in `/organic-os:diagnose`.
+- **Connector probe.** The adapter's MCP tools are detected in-session the
+  way GA4/GSC MCPs are detected; `/organic-os:diagnose` reports
+  present/absent with the known tools actually seen, and setup's connector
+  wizard carries it as one optional entry, verified by a live call.
 - **`hoo-keyword-intel`: a tier that does not need Google Ads.** Volume,
   difficulty, and SERP data when the probe succeeds; the existing
-  `none | basic | explorer` behavior unchanged when it does not.
+  `none | basic | explorer` behavior unchanged when it does not. Tracked
+  keywords now land through `core.keywords`, the single writer for
+  `keywords/tracking.yaml` - still a gated strategy mutation.
 - **Rank tracking with a real source.** The weekly reads true positions for
   `keywords/tracking.yaml` entries, independent of GSC's own-site lagged
-  view - the feature that today silently never runs on most instances.
+  view - the feature that previously silently never ran on most instances.
+  Recorded next to the GSC average in `keywords/history.tsv` via additive
+  trailing columns; adapter absent means one honest no-rank-source line.
 - **`hoo-competitor-intel`: licensed competitor data.** Keyword coverage and
   backlink profiles without touching the ADR-0006 no-scraping line.
 - **`hoo-citation-tracker`: their AI Visibility workflow as a source.**
-- **Tasks carried from the same study:** a deliberately broken fixture site
-  for onsite-audit tests (their `badseo` pattern); investigate cross-listing
-  skills on the `npx skills` registry for reach beyond the plugin
-  marketplace.
+- **Tasks carried from the same study (still open, tracked as issues):** a
+  deliberately broken fixture site for onsite-audit tests (their `badseo`
+  pattern); investigate cross-listing skills on the `npx skills` registry
+  for reach beyond the plugin marketplace.
 
 Not adopted - their web-app architecture, bundling DataForSEO directly, any
 UI - with reasons in the ADR, so the discussion is not re-litigated.

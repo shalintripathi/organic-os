@@ -108,6 +108,12 @@ Three bounded modules, one install:
 | **onsite-optimizer** | Audits any public page with no credentials and maps the site's internal-link graph; with a WordPress connection, applies approved on-page fixes and publishes approved drafts, always verified and rollback-capable |
 | **content-engine** | Turns an approved brief (explainer or comparison) into a publish-ready draft - research, brand-voice compliance, SEO/authority pass, editorial QA, a human-review-necessity score for the approver - with an optional featured-image step |
 
+All three read whatever connectors you have and degrade honestly without
+them; an optional search-data adapter (OpenSEO is the known one - run by
+you, on your own DataForSEO key) adds keyword volume, true rank tracking,
+competitor coverage, and an AI-visibility source when its MCP tools are
+present in the session, with no new credential held here.
+
 Verified inventory (2026-09-08): **24 skills, 24 slash commands, 14
 specialist agents, 488 passing tests.**
 
