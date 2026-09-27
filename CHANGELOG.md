@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.7.1] - 2026-09-27
+
+### Added
+- **tests:** the GAQL runner (`hoo/google_ads/gaql.py`) has coverage for the
+  first time - service lookup, query pass-through, row order, the
+  no-protobuf fallback, and empty results. The new tests were
+  mutation-verified during review: reversing the row order and breaking the
+  fallback each made them fail. Contributed by @ayushdwivedi-stack
+  (#28, closes #5).
+- **docs:** ADR-0013 records the npx-skills-registry investigation and the
+  decision not to cross-list: a registry install grabs only the markdown,
+  and every skill here assumes the plugin's Python lib and a brain repo, so
+  the failure would be silent and unsignposted. The Claude plugin
+  marketplace stays the canonical install path; revisit if the registry
+  learns to declare dependencies. Investigation by @ayushdwivedi-stack
+  (#27, closes #26).
+
 ## [0.7.0] - 2026-09-08
 
 ### Added

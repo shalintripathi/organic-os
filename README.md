@@ -114,7 +114,7 @@ you, on your own DataForSEO key) adds keyword volume, true rank tracking,
 competitor coverage, and an AI-visibility source when its MCP tools are
 present in the session, with no new credential held here.
 
-Verified inventory (2026-09-08): **24 skills, 24 slash commands, 14
+Verified inventory (2026-09-27): **24 skills, 24 slash commands, 14
 specialist agents, 492 passing tests.**
 
 ```mermaid
