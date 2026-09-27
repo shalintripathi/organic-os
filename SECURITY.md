@@ -56,6 +56,21 @@ committed, referenced by path outside your own machine, or printed into a
 transcript by any skill. If you see a skill about to echo a credential
 value, stop it - that is not expected behavior.
 
+## Verified install channels
+
+There are exactly two official sources for organic-os:
+
+- **This repository:** `https://github.com/shalintripathi/organic-os`.
+- **The plugin marketplace install documented in the README:**
+  `/plugin marketplace add shalintripathi/organic-os`, which resolves to
+  the same repository.
+
+There is no npm package, no installer website, no hosted service, and no
+other mirror. Anything else claiming to be organic-os - a package registry
+entry, a lookalike repository, a paid tier - is unofficial and did not come
+from the maintainer. If you find one, report it the same way as a security
+issue (below).
+
 ## Reporting an issue
 
 For an ordinary bug, open a GitHub issue at
