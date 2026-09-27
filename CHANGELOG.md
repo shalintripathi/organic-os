@@ -1,5 +1,53 @@
 # Changelog
 
+## [0.8.0] - 2026-09-27
+
+### Added
+- **The plugin meets the operator in-session (ADR-0014, the ECC study).**
+  Every rule organic-os enforces lived in CI, the contract layer, or
+  skill prose - and none of those layers can reach a user's live
+  session. Two real failures on the reference deployment trace to that
+  gap: hand-edited approval records sat malformed and unnoticed for six
+  weeks, and the July silence incident was at bottom a visibility
+  failure - the loop worked and nothing said so. The plugin now ships
+  its first two harness runtime hooks (`plugin/hooks/`):
+  - **Session-start status line** (`session_status.py`). A session that
+    can resolve a brain - the cwd or a parent, else the sites registry's
+    active site - hears at most 3 short lines: pending approvals with
+    the oldest age, MALFORMED/PARTIAL queue notes, the last routine
+    signal date, and the site stage. Nothing pending and a fresh signal
+    print nothing at all - silence is the default.
+  - **Derived-file guard** (`derived_guard.py`). Hand edits to the
+    one-writer files inside a brain repo - `approvals/queue.md`, rebuilt
+    from item frontmatter, and `approvals/*.md` decision records,
+    written by `core.approval.record_decision` - are refused with the
+    writer named and the supported path, the same refusal shape as
+    every other gate. Files that merely share a name outside a brain
+    are never touched.
+  Both fail open and fail silent: no network, no git commands, no
+  writes, capped reads, and any internal error means exit 0 with no
+  output. Nothing anywhere assumes a hook ran: the current harness docs
+  (verified 2026-09) are silent on whether plugin hooks fire in Cowork
+  or `claude -p`, so on any harness that does not run them the plugin
+  behaves exactly as v0.7.1 did. Hook scripts are code - stdlib plus
+  PyYAML, 27 unit tests including subprocess exit-0 probes, audited
+  like `lib/core`. See `plugin/docs/hooks.md`.
+- **`AGENTS.md` at the repo root** - the cross-harness convention, so
+  non-Claude contributor agents (Codex, Cursor, and others read it) get
+  the house rules: the three gates with expected outputs, the data
+  boundary, style, module boundaries, DCO.
+- **SECURITY.md: verified install channels.** This repository and the
+  README's marketplace install are the only official sources - no npm
+  package, no website, no other mirror. One paragraph now, checkable
+  the day an impersonating re-upload appears.
+
+### Carried
+- Multi-harness portability stays an investigation, not a commitment:
+  the deliverable is an ADR - port with scope, or reject with reasons
+  (the ADR-0013 constraint applies: every skill assumes the plugin's
+  Python lib and a brain repo). Tracked as an issue, not shipped in
+  this phase.
+
 ## [0.7.1] - 2026-09-27
 
 ### Added

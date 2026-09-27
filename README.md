@@ -114,6 +114,11 @@ you, on your own DataForSEO key) adds keyword volume, true rank tracking,
 competitor coverage, and an AI-visibility source when its MCP tools are
 present in the session, with no new credential held here.
 
+Installing also wires two quiet session hooks: a session that can see
+your brain repo opens by saying what is waiting for approval, and hand
+edits to derived approval files are refused with the supported path named
+([plugin/docs/hooks.md](plugin/docs/hooks.md)).
+
 Verified inventory (2026-09-27): **24 skills, 24 slash commands, 14
 specialist agents, 519 passing tests.**
 

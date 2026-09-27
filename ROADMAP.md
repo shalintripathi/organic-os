@@ -354,13 +354,15 @@ and requires nothing. All additive, gates untouched:
 Not adopted - their web-app architecture, bundling DataForSEO directly, any
 UI - with reasons in the ADR, so the discussion is not re-litigated.
 
-## v0.8 - The plugin meets the operator in-session
+## v0.8 - The plugin meets the operator in-session - COMPLETE
 
 Decision recorded in [ADR-0014](docs/adr/0014-runtime-enforcement-hooks.md)
 (the ECC study): the plugin gains its first runtime hooks, plus two cheap
 contributor-surface items. Constraints: fail-silent, fast, no network, no
 nagging, and byte-identical behavior on any harness that does not run
-plugin hooks.
+plugin hooks. Closed by the v0.8.0 release (2026-09-27) - see CHANGELOG.md
+and `plugin/docs/hooks.md` - except the carried portability investigation,
+which stays open below.
 
 - **Session-start status surfacing.** A session that can resolve a
   registered brain hears one line: pending approvals and their age, last
@@ -372,10 +374,10 @@ plugin hooks.
   named, the same refusal shape every other gate uses.
 - **`AGENTS.md` at the repo root** for non-Claude contributor agents,
   and **verified install channels in `SECURITY.md`**.
-- **Carried task (investigation, not commitment):** multi-harness
-  portability - deliverable is an ADR, port with scope or reject with
-  reasons (the ADR-0013 constraint applies: skills assume the Python lib
-  and a brain repo).
+- **Carried task (investigation, not commitment; still open, tracked as
+  an issue):** multi-harness portability - deliverable is an ADR, port
+  with scope or reject with reasons (the ADR-0013 constraint applies:
+  skills assume the Python lib and a brain repo).
 
 ## v1.0 - Many sites, many hands
 
