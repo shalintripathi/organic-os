@@ -115,7 +115,7 @@ competitor coverage, and an AI-visibility source when its MCP tools are
 present in the session, with no new credential held here.
 
 Verified inventory (2026-09-27): **24 skills, 24 slash commands, 14
-specialist agents, 492 passing tests.**
+specialist agents, 519 passing tests.**
 
 ```mermaid
 flowchart TB
